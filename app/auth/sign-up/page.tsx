@@ -8,6 +8,7 @@ const Sign_Up = () => {
     firstName: "",
     lastName: "",
     designation: "",
+    customDesignation: "",
     department: "",
     email: "",
     password: "",
@@ -24,25 +25,61 @@ const Sign_Up = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "designation" && value === "Director") {
-      setFormData((prev) => ({ ...prev, designation: value, department: "" }));
+
+    // Special handling when the designation select changes
+    if (name === "designation") {
+      // If Director selected -> clear department & customDesignation
+      if (value === "Director") {
+        setFormData((prev) => ({
+          ...prev,
+          designation: value,
+          department: "",
+          customDesignation: "",
+        }));
+        return;
+      }
+
+      // If switching away from Others, clear customDesignation
+      if (value !== "Others") {
+        setFormData((prev) => ({
+          ...prev,
+          designation: value,
+          customDesignation: "",
+        }));
+        return;
+      }
+
+      // If Others selected -> keep department as-is, show customDesignation input
+      setFormData((prev) => ({ ...prev, designation: value }));
       return;
     }
+
+    // Normal updates for other fields (including department & customDesignation)
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Submitting:", formData);
+    // Replace with your API call / validation as needed
   };
 
+  // Validation depends on designation:
+  // - If Director: department NOT required, customDesignation NOT required
+  // - If Department Manager: department required
+  // - If Others: department required AND customDesignation required
   const isFormValid =
     formData.firstName.trim() &&
     formData.lastName.trim() &&
     formData.designation &&
     formData.email.trim() &&
     formData.password &&
-    (formData.designation === "Director" ? true : formData.department);
+    (formData.designation === "Director"
+      ? true
+      : formData.department) &&
+    (formData.designation === "Others"
+      ? formData.customDesignation.trim()
+      : true);
 
   return (
     <div className="h-screen w-full flex">
@@ -51,20 +88,19 @@ const Sign_Up = () => {
         {/* Decorative background image (behind the card) */}
         <div className="absolute inset-0 -z-10">
           <Image
-            src="/images/train.png" // change to your image path
+            src="/images/train.png"
             alt="train"
             fill
             style={{ objectFit: "cover" }}
             priority
           />
-          {/* optional dark overlay */}
           <div className="absolute inset-0 bg-black/10" />
         </div>
 
         {/* Card: fixed max height so whole page fits in one viewport */}
         <div
           className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl
-                     w-[75%] max-w-md h-[82vh] max-h-[82vh] p-6 flex flex-col"
+                     w-[75%] max-w-md h-[82vh] max-h-[82vh] p-6 flex flex-col overflow-x-hidden"
         >
           <h2 className="text-3xl font-bold mb-6 text-center text-green-600">
             Sign Up
@@ -124,6 +160,7 @@ const Sign_Up = () => {
               </select>
             </div>
 
+            {/* Show Department dropdown when designation is NOT Director and a designation is chosen */}
             {formData.designation && formData.designation !== "Director" && (
               <div className="mb-4 w-full">
                 <label className="text-black p-1 m-1 font-semibold block">
@@ -143,6 +180,24 @@ const Sign_Up = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {/* If Others selected -> show custom designation text input */}
+            {formData.designation === "Others" && (
+              <div className="mb-4 w-full">
+                <label className="text-black p-1 m-1 font-semibold block">
+                  Write your Designation
+                </label>
+                <input
+                  type="text"
+                  name="customDesignation"
+                  value={formData.customDesignation}
+                  onChange={handleChange}
+                  placeholder="Enter your Designation (e.g. Research Lead)"
+                  className="w-full p-2 border border-gray-300 rounded-lg text-black m-1"
+                  required
+                />
               </div>
             )}
 
@@ -178,7 +233,9 @@ const Sign_Up = () => {
               <button
                 type="submit"
                 className={`rounded-2xl p-2 mt-2 text-white font-medium w-1/2 ${
-                  isFormValid ? "bg-[#00C951] border-2" : "bg-gray-400 cursor-not-allowed"
+                  isFormValid
+                    ? "bg-[#00C951] border-2"
+                    : "bg-gray-400 cursor-not-allowed"
                 }`}
                 disabled={!isFormValid}
               >

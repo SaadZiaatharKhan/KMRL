@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useState } from "react";
+import { login } from "./actions"; // Import the login action
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -12,12 +13,10 @@ const Login = () => {
   });
 
   const departmentOptions = [
-    "HR",
-    "Finance",
-    "IT",
+    "Engineering",
+    "Design", 
     "Operations",
-    "Marketing",
-    "Sales",
+    "Finance"
   ];
 
   const handleChange = (e) => {
@@ -43,13 +42,6 @@ const Login = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // login logic here - e.g. call API, supabase, etc.
-    // maybe send { email, password, designation, department }
-    console.log("Login data:", formData);
-  };
-
   // Disable button if email/password/designation missing OR if designation != Director and department missing
   const isDisabled =
     !formData.email ||
@@ -67,10 +59,10 @@ const Login = () => {
         <div className="w-48 h-48 relative">
           <Image src="/images/login.svg" alt="Login" fill style={{ objectFit: "contain" }} />
         </div>
-        <p className="text-2xl font-medium text-white">? New User</p>
+        <p className="text-2xl font-medium text-white">New User?</p>
         <button
           onClick={() => (window.location.href = "/auth/sign-up")}
-          className="text-2xl font-bold text-white mt-2"
+          className="text-2xl font-bold text-white mt-2 underline"
         >
           Sign Up
         </button>
@@ -79,7 +71,7 @@ const Login = () => {
       {/* Right side (form) */}
       <div className="w-3/6 bg-white flex flex-col justify-center items-center">
         <form
-          onSubmit={handleSubmit}
+          action={login}
           className="w-full max-w-sm p-6 rounded-lg shadow-md"
         >
           <h2 className="text-3xl font-bold mb-4 text-center text-green-600">

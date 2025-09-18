@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useState } from "react";
+import { signup } from "./actions";
 
 const Sign_Up = () => {
   const [formData, setFormData] = useState({
@@ -56,12 +57,6 @@ const Sign_Up = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Submitting:", formData);
-    // Replace with your API call / validation as needed
-  };
-
   // Validation depends on designation:
   // - If Director: department NOT required, customDesignation NOT required
   // - If Department Manager: department required
@@ -107,7 +102,7 @@ const Sign_Up = () => {
           {/* Make form area scroll inside card for very small screens */}
           <form
             className="flex-1 overflow-y-auto overflow-x-hidden px-1"
-            onSubmit={handleSubmit}
+            action={signup}
             style={{ scrollbarGutter: "stable" }}
           >
             <div className="mb-4 w-full">

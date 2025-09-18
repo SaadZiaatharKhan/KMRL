@@ -67,7 +67,7 @@ const Sign_Up = () => {
                      w-[75%] max-w-md h-[82vh] max-h-[82vh] p-6 flex flex-col"
         >
           <h2 className="text-3xl font-bold mb-6 text-center text-green-600">
-            Login
+            Sign Up
           </h2>
 
           {/* Make form area scroll inside card for very small screens */}

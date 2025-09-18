@@ -19,6 +19,8 @@ const Login = () => {
     console.log("Login data:", formData);
   };
 
+  const isDisabled = !formData.email || !formData.password;
+
   return (
     <div className="h-screen w-full flex">
       {/* Left side */}
@@ -76,12 +78,19 @@ const Login = () => {
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition"
-          >
-            Login
-          </button>
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              className={`rounded-2xl p-2 mt-2 text-white font-medium w-1/2 ${
+                !isDisabled
+                  ? "bg-[#00C951] border-2"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+              disabled={isDisabled}
+            >
+              Login
+            </button>
+          </div>
         </form>
       </div>
     </div>

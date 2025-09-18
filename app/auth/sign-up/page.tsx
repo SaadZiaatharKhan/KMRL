@@ -15,12 +15,10 @@ const Sign_Up = () => {
   });
 
   const departmentOptions = [
-    "HR",
-    "Finance",
-    "IT",
+    "Engineering",
+    "Design",
     "Operations",
-    "Marketing",
-    "Sales",
+    "Finance"
   ];
 
   const handleChange = (e) => {

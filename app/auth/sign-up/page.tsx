@@ -14,18 +14,14 @@ const Sign_Up = () => {
     department: "",
     email: "",
     password: "",
+    phoneNumber: "", // Add this line
   });
   
   toast.success("You have signed up successfully!", {
   className: "rounded-xl shadow-md",
 });
 
-  const departmentOptions = [
-    "Engineering",
-    "Design",
-    "Operations",
-    "Finance"
-  ];
+  const departmentOptions = ["Engineering", "Design", "Operations", "Finance"];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,9 +68,8 @@ const Sign_Up = () => {
     formData.designation &&
     formData.email.trim() &&
     formData.password &&
-    (formData.designation === "Director"
-      ? true
-      : formData.department) &&
+    formData.phoneNumber.trim() && // Add this line
+    (formData.designation === "Director" ? true : formData.department) &&
     (formData.designation === "Others"
       ? formData.customDesignation.trim()
       : true);
@@ -218,13 +213,30 @@ const Sign_Up = () => {
             )}
 
             <div className="mb-4 w-full">
-              <label className="text-black p-1 m-1 font-semibold block">Email</label>
+              <label className="text-black p-1 m-1 font-semibold block">
+                Email
+              </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Enter your Email"
+                className="w-full p-2 border border-gray-300 rounded-lg text-black m-1"
+                required
+              />
+            </div>
+
+            <div className="mb-4 w-full">
+              <label className="text-black p-1 m-1 font-semibold block">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                placeholder="Enter your Phone Number"
                 className="w-full p-2 border border-gray-300 rounded-lg text-black m-1"
                 required
               />
@@ -266,7 +278,12 @@ const Sign_Up = () => {
       <div className="w-1/2 bg-[#00C951] rounded-l-full flex flex-col items-center justify-center text-white h-screen">
         <div className="flex flex-col items-center justify-center gap-4">
           <div className="w-48 h-48 relative">
-            <Image src="/images/sign-up.svg" alt="Sign Up" width={300} height={300} />
+            <Image
+              src="/images/sign-up.svg"
+              alt="Sign Up"
+              width={300}
+              height={300}
+            />
           </div>
           <p className="text-2xl font-medium">Already Have An Account</p>
           <button

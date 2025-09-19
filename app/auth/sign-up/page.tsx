@@ -3,6 +3,7 @@
 import Image from "next/image";
 import React, { useState } from "react";
 import { signup } from "./actions";
+import { toast } from "react-toastify";
 
 const Sign_Up = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +16,10 @@ const Sign_Up = () => {
     password: "",
     phoneNumber: "", // Add this line
   });
+  
+  toast.success("You have signed up successfully!", {
+  className: "rounded-xl shadow-md",
+});
 
   const departmentOptions = ["Engineering", "Design", "Operations", "Finance"];
 
@@ -88,7 +93,7 @@ const Sign_Up = () => {
         {/* Card: fixed max height so whole page fits in one viewport */}
         <div
           className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl
-                     w-[75%] max-w-md h-[82vh] max-h-[82vh] p-6 flex flex-col overflow-x-hidden"
+                    w-[75%] max-w-md h-[82vh] max-h-[82vh] p-6 flex flex-col overflow-x-hidden"
         >
           <h2 className="text-3xl font-bold mb-6 text-center text-green-600">
             Sign Up
@@ -96,10 +101,28 @@ const Sign_Up = () => {
 
           {/* Make form area scroll inside card for very small screens */}
           <form
-            className="flex-1 overflow-y-auto overflow-x-hidden px-1"
-            action={signup}
-            style={{ scrollbarGutter: "stable" }}
-          >
+  className="flex-1 overflow-y-auto overflow-x-hidden px-1"
+  onSubmit={async (e) => {
+    e.preventDefault();
+    toast.info("Signing you up...", { className: "rounded-xl" });
+
+    try {
+      const formDataObj = new FormData(e.currentTarget);
+      const result = await signup(formDataObj);
+
+      if (result?.error) {
+        toast.error(result.error, { className: "rounded-xl" });
+      } else {
+        toast.success("You have signed up successfully!", { className: "rounded-xl" });
+      }
+    } catch (err) {
+      toast.error("Unexpected error occurred!", { className: "rounded-xl" });
+    }
+  }}
+  style={{ scrollbarGutter: "stable" }}
+>
+
+
             <div className="mb-4 w-full">
               <label className="text-black p-1 m-1 font-semibold block">
                 First Name

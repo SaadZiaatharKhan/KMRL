@@ -194,7 +194,7 @@ const HeroSection: React.FC = () => {
         <h1
           className="text-6xl sm:text-7xl lg:text-8xl font-extrabold mb-4 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg"
         >
-          <span className="block text-center ">INFORM.</span>
+          <span className="block text-center">INFORM.</span>
           <span className="block text-center">ACT.</span>
           <span className="block text-center">SUCCEED.</span>
         </h1>

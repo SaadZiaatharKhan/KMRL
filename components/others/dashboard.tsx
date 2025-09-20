@@ -126,15 +126,15 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex flex-col justify-center items-center w-full p-4">
-      <p className="text-3xl font-bold text-black mb-4">Dashboard</p>
+      <p className="text-3xl font-bold text-black m-2">Dashboard</p>
 
       {/* Top Bar */}
       <div
-        className="flex justify-between items-center mx-2 p-1 w-full"
+        className="flex justify-between items-center m-2 p-1 w-full"
         style={{ maxWidth: 1100 }}
       >
         <button
-          className="bg-green-500 text-white border-2 border-white font-bold py-2 px-4 rounded-2xl"
+          className="bg-green-500 text-white border-2 border-white font-bold py-2 px-4 rounded-2xl "
           onClick={handleShowUpload}
         >
           Upload Notice

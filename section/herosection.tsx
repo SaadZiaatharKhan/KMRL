@@ -162,27 +162,26 @@ const HeroSection: React.FC = () => {
       {/* top-right nav (kept minimal) - clickable because hero text won't block it */}
       <nav className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20 pointer-events-auto">
   {/* Left Corner: Logo */}
-  <div className="flex items-center">
+  <div className="flex items-center ">
   <Image 
     src="/images/KMRL.webp" 
-    width={100} 
-    height={100} 
+    width={150} 
+    height={150} 
     alt="KMRL" 
+    className=""
   />
-  <span className="text-2xl font-extrabold tex-[#00B2FF] tracking-tight ">KMRL Document Intelligence Platform</span>
   </div>
-
   {/* Right Corner: Buttons */}
   <div className="flex gap-4">
     <button
       onClick={() => (window.location.href = "/auth/login")}
-      className="bg-[#29903B] hover:bg-[#1f7a2e] cursor-pointer text-white px-6 py-2 rounded-2xl font-medium transition-colors"
+      className="px-8 py-2 rounded-md bg-teal-500 text-white font-bold transition duration-200 hover:bg-white hover:text-black border-2 border-transparent hover:border-teal-500 cursor-pointer"
     >
       Login
     </button>
-    <button
+   <button
       onClick={() => (window.location.href = "/auth/sign-up")}
-      className="bg-[#29903B] hover:bg-[#1f7a2e] cursor-pointer text-white px-6 py-2 rounded-2xl font-medium transition-colors"
+      className="px-8 py-2 rounded-md bg-teal-500 text-white font-bold transition duration-200 hover:bg-white hover:text-black border-2 border-transparent hover:border-teal-500 cursor-pointer"
     >
       Sign Up
     </button>

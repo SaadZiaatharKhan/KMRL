@@ -2,6 +2,7 @@
 import React from 'react'
 import HeroSection from '@/section/herosection'
 import SecondPage from '@/components/secondPage'
+import ThirdPage from '@/components/thirdPage'
 
 const Home = () => {
   
@@ -12,6 +13,9 @@ const Home = () => {
     </div>
     <div className='min-h-[100vh]'>
     <SecondPage/>
+    </div>
+    <div className='min-h-screen'>
+    <ThirdPage />
     </div>
   </div>
   )

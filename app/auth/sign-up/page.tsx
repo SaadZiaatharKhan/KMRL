@@ -4,8 +4,10 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { signup } from "./actions";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 const Sign_Up = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -14,12 +16,8 @@ const Sign_Up = () => {
     department: "",
     email: "",
     password: "",
-    phoneNumber: "", // Add this line
+    phoneNumber: "",
   });
-  
-  toast.success("You have signed up successfully!", {
-  className: "rounded-xl shadow-md",
-});
 
   const departmentOptions = ["Engineering", "Design", "Operations", "Finance"];
 
@@ -68,11 +66,118 @@ const Sign_Up = () => {
     formData.designation &&
     formData.email.trim() &&
     formData.password &&
-    formData.phoneNumber.trim() && // Add this line
+    formData.phoneNumber.trim() &&
     (formData.designation === "Director" ? true : formData.department) &&
     (formData.designation === "Others"
       ? formData.customDesignation.trim()
       : true);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Show loading toast
+    const loadingToast = toast.info("Creating your account...", { 
+      className: "rounded-xl",
+      autoClose: false 
+    });
+
+    try {
+      const formDataObj = new FormData(e.currentTarget);
+      const result = await signup(formDataObj);
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+
+      // Log the result to see what we're getting
+      console.log("Signup result:", result);
+
+      // Check for error conditions
+      if (result?.error) {
+        const errorMessage = result.error;
+        
+        // Show error toast
+        toast.error(errorMessage, { 
+          className: "rounded-xl",
+          autoClose: 5000 
+        });
+        
+        // Log error to console for debugging
+        console.error("Sign-up error:", errorMessage);
+        
+      } else {
+        // If no error is returned, assume success
+        // (Your server action redirects on success, so no result object is returned)
+        
+        // Show success toast
+        toast.success("Account created successfully!", { 
+          className: "rounded-xl",
+          autoClose: 3000 
+        });
+
+        console.log("Sign-up successful!");
+
+        // Clear form data
+        setFormData({
+          firstName: "",
+          lastName: "",
+          designation: "",
+          customDesignation: "",
+          department: "",
+          email: "",
+          password: "",
+          phoneNumber: "",
+        });
+
+        // Redirect to login page after a short delay to show the toast
+        setTimeout(() => {
+          router.push("/auth/login?message=signup-success");
+        }, 1500);
+      }
+      
+    } catch (err) {
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
+      // Check if this is a redirect (which means success)
+      if (err.message?.includes('NEXT_REDIRECT') || err.digest?.includes('NEXT_REDIRECT')) {
+        // This is actually a successful redirect from the server action
+        toast.success("Account created successfully!", { 
+          className: "rounded-xl",
+          autoClose: 3000 
+        });
+
+        console.log("Sign-up successful (redirected)!");
+
+        // Clear form data
+        setFormData({
+          firstName: "",
+          lastName: "",
+          designation: "",
+          customDesignation: "",
+          department: "",
+          email: "",
+          password: "",
+          phoneNumber: "",
+        });
+
+        // Redirect to login page after a short delay to show the toast
+        setTimeout(() => {
+          router.push("/auth/login?message=signup-success");
+        }, 1500);
+        
+      } else {
+        // This is a real error
+        toast.error("An unexpected error occurred!", { 
+          className: "rounded-xl",
+          autoClose: 5000 
+        });
+        
+        // Log detailed error to console
+        console.error("Unexpected sign-up error:", err);
+        console.error("Error stack:", err.stack);
+      }
+    }
+  };
 
   return (
     <div className="h-screen w-full flex">
@@ -101,28 +206,10 @@ const Sign_Up = () => {
 
           {/* Make form area scroll inside card for very small screens */}
           <form
-  className="flex-1 overflow-y-auto overflow-x-hidden px-1"
-  onSubmit={async (e) => {
-    e.preventDefault();
-    toast.info("Signing you up...", { className: "rounded-xl" });
-
-    try {
-      const formDataObj = new FormData(e.currentTarget);
-      const result = await signup(formDataObj);
-
-      if (result?.error) {
-        toast.error(result.error, { className: "rounded-xl" });
-      } else {
-        toast.success("You have signed up successfully!", { className: "rounded-xl" });
-      }
-    } catch (err) {
-      toast.error("Unexpected error occurred!", { className: "rounded-xl" });
-    }
-  }}
-  style={{ scrollbarGutter: "stable" }}
->
-
-
+            className="flex-1 overflow-y-auto overflow-x-hidden px-1"
+            onSubmit={handleSubmit}
+            style={{ scrollbarGutter: "stable" }}
+          >
             <div className="mb-4 w-full">
               <label className="text-black p-1 m-1 font-semibold block">
                 First Name
@@ -287,7 +374,7 @@ const Sign_Up = () => {
           </div>
           <p className="text-2xl font-medium">Already Have An Account</p>
           <button
-            onClick={() => (window.location.href = "/auth/login")}
+            onClick={() => router.push("/auth/login")}
             className="text-2xl font-bold underline"
           >
             Login

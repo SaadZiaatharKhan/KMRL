@@ -1,23 +1,57 @@
-// app/components/Others.tsx
-import React from "react";
-import { createClient } from "@/utils/supabase/server";
+"use client"
+
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Dashboard from "@/components/others/dashboard";
+import Hub from "@/components/others/hub";
+import Insights from "@/components/others/insights";
+import Chatbot from "@/components/others/chatbot";
 
-export default async function Others() {
-  const supabase = await createClient();
+export default function Others() {
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
-  // get authenticated user
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
+  const tabs = [
+    { id: 'dashboard', component: Dashboard, color: '#c3facb', icon: '/images/icons/dashboard.webp', alt: 'Dashboard' },
+    { id: 'hub', component: Hub, color: '#f1fac3', icon: '/images/icons/paper.webp', alt: 'Hub' },
+    { id: 'insights', component: Insights, color: '#fac3c8', icon: '/images/icons/rating.webp', alt: 'Senior Insights' },
+    { id: 'chatbot', component: Chatbot, color: '#c3cefa', icon: '/images/icons/robotics.webp', alt: 'Chatbot' }
+  ];
 
-  if (userErr) {
-    // optional: log or handle error
+  const currentTab = tabs.find(tab => tab.id === activeTab);
+  const ActiveComponent = currentTab?.component || Dashboard;
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const response = await fetch('/api/others/profile');
+        if (response.ok) {
+          const profile = await response.json();
+          setUserProfile(profile);
+        } else {
+          setUserProfile(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        setUserProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-xl text-gray-500">Loading...</div>
+      </div>
+    );
   }
 
-  if (!user) {
+  if (!userProfile) {
     return (
       <>
         <p className="text-5xl text-blue-400 p-2 ml-3.5 mt-4 font-bold">
@@ -28,50 +62,47 @@ export default async function Others() {
     );
   }
 
-  // fetch profile row (first_name, last_name)
-  const { data: profile, error: profileErr } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, designation, department")
-    .eq("id", user.id)
-    .single();
-
-  const displayName =
-    profile && (profile.first_name || profile.last_name)
-      ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim()
-      : user.email ?? user.id;
-
-  const displayProfession = profile?.designation ?? "No designation";
-  const displayDepartment = profile?.department ?? "No department";
+  const { displayName, displayProfession, displayDepartment } = userProfile;
 
   return (
     <>
-      <div className="m-2 p-2 rounded-xl bg-[#c3facb]">
-        <p className="text-5xl text-blue-400 p-2 ml-3.5 font-bold">
+      <div 
+        className="m-2 p-2 rounded-xl transition-colors duration-300 ease-in-out"
+        style={{ backgroundColor: currentTab?.color || '#c3facb' }}
+      >
+        <p className="text-4xl text-blue-400 p-2 ml-3.5 font-bold">
           Welcome
         </p>
-        <p className="text-2xl ml-8 text-gray-350 font-medium">{displayName}</p>
-        <p className="text-lg ml-8 text-gray-400 font-medium">
+        <p className="text-xl ml-8 text-gray-500 font-medium">{displayName}</p>
+        <p className="text-sm ml-8 text-gray-400 font-medium">
           {displayProfession}, {displayDepartment.slice(0, 3)}. Department
         </p>
       </div>
 
       <div className="flex justify-center items-center">
-        <Dashboard />
+        <ActiveComponent />
       </div>
 
-      <div className="fixed flex justify-evenly bottom-0 left-[33.335%] m-2 p-2 rounded-xl bg-[#c3facb] w-4/12">
-          <button className="p-1 m-1 ">
-            <Image src="/images/icons/dashboard.webp" width={35} height={35} alt="Dashboard" />
+      <div 
+        className="fixed flex justify-evenly bottom-0 left-[33.330%] m-2 p-2 rounded-xl w-4/12 shadow-2xs transition-colors duration-300 ease-in-out"
+        style={{ backgroundColor: currentTab?.color || '#c3facb' }}
+      >
+        {tabs.map((tab) => (
+          <button 
+            key={tab.id}
+            className={`p-1 m-1 transition-all duration-200 ease-in-out ${
+              activeTab === tab.id ? 'border-2 border-white rounded-lg' : ''
+            }`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            <Image 
+              src={tab.icon} 
+              width={30} 
+              height={30} 
+              alt={tab.alt}
+            />
           </button>
-          <button className="p-1 m-1 ">
-            <Image src="/images/icons/paper.webp" width={35} height={35} alt="Hub" />
-          </button>
-          <button className="p-1 m-1 ">
-            <Image src="/images/icons/rating.webp" width={35} height={35} alt="Senior Insights" />
-          </button>
-          <button className="p-1 m-1 ">
-            <Image src="/images/icons/robotics.webp" width={35} height={35} alt="Chatbot" />
-          </button>
+        ))}
       </div>
     </>
   );

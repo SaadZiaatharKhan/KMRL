@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next.js";
+import Image from "next/image";
 
 const ThirdPage = () => {
   return (

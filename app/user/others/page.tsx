@@ -27,7 +27,7 @@ export default async function Others() {
   // fetch profile row (first_name, last_name)
   const { data: profile, error: profileErr } = await supabase
     .from("profiles")
-    .select("first_name, last_name")
+    .select("first_name, last_name, designation, department")
     .eq("id", user.id)
     .single();
 
@@ -36,10 +36,15 @@ export default async function Others() {
       ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim()
       : user.email ?? user.id;
 
+    const displayProfession = profile?.designation ?? "No designation";
+    const displayDepartment = profile?.department ?? "No department";
+
+
   return (
     <>
       <p className="text-5xl text-blue-400 p-2 ml-3.5 mt-4 font-bold">Welcome</p>
-      <p className="text-2xl ml-8 mt-2 text-gray-500 font-medium">{displayName}</p>
+      <p className="text-2xl ml-8 text-gray-500 font-medium">{displayName}</p>
+      <p className="text-lg ml-8 text-gray-500 font-medium">{displayProfession}, {displayDepartment.slice(0, 3)}. Department</p>
     </>
   );
 }

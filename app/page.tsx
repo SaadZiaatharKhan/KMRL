@@ -10,7 +10,7 @@ const Home = () => {
     <div className='min-h-screen'>
     <HeroSection/>
     </div>
-    <div className='min-h-screen'>
+    <div className='min-h-[100vh]'>
     <SecondPage/>
     </div>
   </div>

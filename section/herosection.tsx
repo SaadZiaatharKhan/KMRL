@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 const CROSSFADE_MS = 700;
 
@@ -159,25 +160,36 @@ const HeroSection: React.FC = () => {
       <div className="absolute inset-0 bg-black/28" style={{ zIndex: 10 }} />
 
       {/* top-right nav (kept minimal) - clickable because hero text won't block it */}
-      <nav className="absolute top-0 right-0 p-6 flex gap-4 z-20 pointer-events-auto">
-        <button
-          onClick={() => (window.location.href = "/auth/login")}
-          className="bg-[#29903B] hover:bg-[#1f7a2e] cursor-pointer text-white px-6 py-2 rounded-2xl font-medium transition-colors"
-        >
-          Login
-        </button>
-        <button
-          onClick={() => (window.location.href = "/auth/sign-up")}
-          className="bg-[#29903B] hover:bg-[#1f7a2e] cursor-pointer text-white px-6 py-2 rounded-2xl font-medium transition-colors"
-        >
-          Sign Up
-        </button>
-      </nav>
+      <nav className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20 pointer-events-auto">
+  {/* Left Corner: Logo */}
+  <div className="flex items-center">
+  <Image 
+    src="/images/KMRL.webp" 
+    width={100} 
+    height={100} 
+    alt="KMRL" 
+  />
+  <span className="text-2xl font-extrabold tex-[#00B2FF] tracking-tight ">KMRL Document Intelligence Platform</span>
+  </div>
 
-      {/* hero text and controls (text sits above video)
-          -> IMPORTANT: pointer-events-none prevents this full-cover block from intercepting clicks
-             so navbar (and other clickable UI) remains functional.
-      */}
+  {/* Right Corner: Buttons */}
+  <div className="flex gap-4">
+    <button
+      onClick={() => (window.location.href = "/auth/login")}
+      className="bg-[#29903B] hover:bg-[#1f7a2e] cursor-pointer text-white px-6 py-2 rounded-2xl font-medium transition-colors"
+    >
+      Login
+    </button>
+    <button
+      onClick={() => (window.location.href = "/auth/sign-up")}
+      className="bg-[#29903B] hover:bg-[#1f7a2e] cursor-pointer text-white px-6 py-2 rounded-2xl font-medium transition-colors"
+    >
+      Sign Up
+    </button>
+  </div>
+</nav>
+
+
       <div className="absolute inset-0 z-30 flex flex-col justify-center items-center text-center px-6 sm:px-16 text-white pointer-events-none">
         {/* Headline */}
         <h1

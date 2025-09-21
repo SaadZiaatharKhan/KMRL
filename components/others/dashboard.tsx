@@ -53,9 +53,6 @@ const initialNotices: Notice[] = [
 
 const ALL_DEPARTMENTS = ["Engineering", "Design", "Operations", "Finance"];
 
-/**
- * Helper: decide which API route to send the file to based on extension
- */
 function getStagingEndpointForFilename(filename: string) {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
 
@@ -63,20 +60,17 @@ function getStagingEndpointForFilename(filename: string) {
   const docExt = ["ppt", "pptx", "doc", "docx", "xls", "xlsx", "pdf"];
   const dataExt = ["txt", "json", "csv", "xml"];
 
-  if (imageExt.includes(ext)) return "/api/image/staging";
-  if (docExt.includes(ext)) return "/api/document/staging";
-  if (dataExt.includes(ext)) return "/api/dsf/staging";
+  if (imageExt.includes(ext)) return "/api/summarization/image/staging";
+  if (docExt.includes(ext)) return "/api/summarization/document/staging";
+  if (dataExt.includes(ext)) return "/api/summarization/dsf/staging";
 
-  // fallback to dsf (or choose whichever you prefer)
-  return "/api/dsf/staging";
+  return "/api/summarization/dsf/staging";
 }
 
 const Dashboard: React.FC = () => {
   const [show, setShow] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
-
   const [showUploadModal, setShowUploadModal] = useState(false);
-
   const [notices, setNotices] = useState<Notice[]>(initialNotices);
 
   // Upload form state
@@ -92,26 +86,20 @@ const Dashboard: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadedStagingResponse, setUploadedStagingResponse] = useState<any>(null);
+  const [uploadedStagingResponse, setUploadedStagingResponse] =
+    useState<any>(null);
 
-  // computed helper for "All" button
   const isAllSelected = departments.length === ALL_DEPARTMENTS.length;
 
-  // file input ref
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
-
+  const handleImageClick = () => fileInputRef.current?.click();
   const handleClose = () => setShow(false);
   const handleShow = (notice: Notice) => {
     setSelectedNotice(notice);
     setShow(true);
   };
-
   const handleShowUpload = () => {
-    // reset form
     setTitle("");
     setInsights("");
     setDeadline("");
@@ -125,14 +113,32 @@ const Dashboard: React.FC = () => {
     setUploadedStagingResponse(null);
     setShowUploadModal(true);
   };
-
   const handleCloseUpload = () => setShowUploadModal(false);
 
-  /**
-   * Upload function using XHR to allow progress reporting.
-   * Sends file as 'file' field in FormData to the chosen staging route.
-   */
-  function uploadFileToStaging(file: File, endpoint: string) {
+  // Auto-fill form when modal opens and Gemini has extracted notice
+  React.useEffect(() => {
+  // Make sure uploadedStagingResponse exists and has nested extractedNotice
+  const ex = uploadedStagingResponse?.extractedNotice?.extractedNotice;
+  if (ex) {
+    setTitle(ex.title ?? "");
+    setInsights(ex.insights ?? "");
+    setDeadline(ex.deadline ?? "");
+    setSeverity(ex.severity ?? "Low");
+    setAuthorizedBy(ex.authorizedBy ?? "");
+
+    const depts = Array.isArray(ex.departments)
+      ? ex.departments
+      : typeof ex.departments === "string"
+      ? ex.departments.split(",").map((d) => d.trim())
+      : [];
+    setDepartments(depts);
+
+    setShowUploadModal(true);
+  }
+}, [uploadedStagingResponse]);
+
+
+  async function uploadFileToStaging(file: File, endpoint: string) {
     return new Promise<any>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const form = new FormData();
@@ -155,7 +161,6 @@ const Dashboard: React.FC = () => {
             const resp = xhr.response ? JSON.parse(xhr.response) : null;
             resolve(resp);
           } catch (err) {
-            // non-json response
             resolve({ raw: xhr.response });
           }
         } else {
@@ -175,47 +180,66 @@ const Dashboard: React.FC = () => {
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUploadError(null);
-    setUploadedStagingResponse(null);
-    setUploadProgress(null);
+  setUploadError(null);
+  setUploadedStagingResponse(null);
+  setUploadProgress(null);
 
-    if (!e.target.files || e.target.files.length === 0) {
-      setFileName(null);
-      return;
-    }
+  if (!e.target.files || e.target.files.length === 0) return;
 
-    const file = e.target.files[0];
-    setFileName(file.name);
+  const file = e.target.files[0];
+  setFileName(file.name);
 
-    // decide endpoint
-    const endpoint = getStagingEndpointForFilename(file.name);
+  const stagingEndpoint = getStagingEndpointForFilename(file.name);
 
-    try {
-      setUploading(true);
-      const response = await uploadFileToStaging(file, endpoint);
-      // response ideally contains staging id/url from your server
-      setUploadedStagingResponse(response ?? { ok: true });
-      setUploadProgress(100);
-      setUploading(false);
-    } catch (err: any) {
-      console.error("Upload error:", err);
-      setUploadError(err?.message ?? "Upload failed");
-      setUploading(false);
-      setUploadProgress(null);
-    } finally {
-      // clear input so same file can be reselected if needed
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+  try {
+    setUploading(true);
+
+    // 1️⃣ Upload to staging
+    const stagingResponse = await uploadFileToStaging(file, stagingEndpoint);
+    setUploadedStagingResponse(stagingResponse ?? { ok: true });
+
+    // 2️⃣ If Gemini processing is needed (images or routed to summarization)
+    if (
+      stagingResponse.routedTo === "summarization" ||
+      stagingEndpoint.includes("image")
+    ) {
+      const form = new FormData();
+      form.append("file", file);
+
+      const geminiResp = await fetch(
+        "/api/summarization/image/summarization",
+        {
+          method: "POST",
+          body: form,
+        }
+      );
+
+      const geminiJson = await geminiResp.json();
+      console.log("Gemini Extracted:", geminiJson);
+
+      if (geminiJson.success && geminiJson.extractedNotice) {
+        setUploadedStagingResponse(geminiJson); // triggers useEffect to auto-fill
+      } else {
+        console.warn("Gemini returned no extractable notice:", geminiJson);
       }
     }
-  };
+  } catch (err: any) {
+    console.error("Upload/Gemini error:", err);
+    setUploadError(err?.message ?? "Upload failed");
+  } finally {
+    setUploading(false);
+    setUploadProgress(null);
+
+    // Reset file input to allow re-upload
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+};
 
   const toggleDepartment = (dept: string) => {
     setDepartments((prev) =>
       prev.includes(dept) ? prev.filter((d) => d !== dept) : [...prev, dept]
     );
   };
-
   const toggleAllDepartments = () => {
     setDepartments((prev) =>
       prev.length === ALL_DEPARTMENTS.length ? [] : [...ALL_DEPARTMENTS]
@@ -225,7 +249,7 @@ const Dashboard: React.FC = () => {
   const handleUploadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const now = new Date();
-    const uploadTime = now.toLocaleString(); // simple human readable
+    const uploadTime = now.toLocaleString();
     const newNotice: Notice = {
       id: String(Math.floor(Math.random() * 1000000)),
       title: title || "Untitled Notice",
@@ -239,7 +263,6 @@ const Dashboard: React.FC = () => {
     };
 
     setNotices((prev) => [newNotice, ...prev]);
-    // reset form after submit (optional)
     setTitle("");
     setInsights("");
     setDeadline("");
@@ -257,7 +280,6 @@ const Dashboard: React.FC = () => {
     <div className="flex flex-col justify-center items-center w-full p-1">
       <p className="text-3xl font-bold text-black m-1">Dashboard</p>
 
-      {/* Top Bar */}
       <div
         className="flex justify-between items-center p-1 w-full"
         style={{ maxWidth: 1100 }}
@@ -275,12 +297,10 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Grid Table */}
       <div
         className="w-10/12 h-auto border-2 border-gray-300 rounded-lg m-6 p-4"
         style={{ maxWidth: 1100 }}
       >
-        {/* Header Row */}
         <div className="grid grid-cols-8 gap-4 bg-gray-200 font-semibold p-2 rounded-lg">
           <div>Notice No.</div>
           <div>Title</div>
@@ -292,7 +312,6 @@ const Dashboard: React.FC = () => {
           <div>Action</div>
         </div>
 
-        {/* Rows */}
         {notices.map((notice) => (
           <div
             key={notice.id}
@@ -314,11 +333,17 @@ const Dashboard: React.FC = () => {
               {notice.severity}
             </div>
             <div className="text-sm">
-              {notice.departments.length > 0 ? notice.departments.join(", ") : "—"}
+              {notice.departments.length > 0
+                ? notice.departments.join(", ")
+                : "—"}
             </div>
             <div>{notice.uploadTime}</div>
             <div>
-              <Button variant="info" size="sm" onClick={() => handleShow(notice)}>
+              <Button
+                variant="info"
+                size="sm"
+                onClick={() => handleShow(notice)}
+              >
                 View Info
               </Button>
             </div>
@@ -368,7 +393,8 @@ const Dashboard: React.FC = () => {
               </p>
 
               <p>
-                <strong>Authorized by:</strong> {selectedNotice.authorizedBy ?? "—"}
+                <strong>Authorized by:</strong>{" "}
+                {selectedNotice.authorizedBy ?? "—"}
               </p>
 
               <p>
@@ -400,145 +426,122 @@ const Dashboard: React.FC = () => {
         <form onSubmit={handleUploadSubmit}>
           <Modal.Body>
             <div className="space-y-3">
-              {/* File upload trigger */}
               <div className="flex flex-col items-center">
-                <div className="cursor-pointer inline-block" onClick={handleImageClick}>
-                  <Image src="/images/icons/upload.png" width={50} height={50} alt="Upload" />
+                <div
+                  className="cursor-pointer inline-block"
+                  onClick={handleImageClick}
+                >
+                  <Image
+                    src="/images/icons/upload.png"
+                    width={50}
+                    height={50}
+                    alt="Upload"
+                  />
                 </div>
-                {/* Hidden file input */}
                 <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                {fileName && <p className="mt-1 text-sm">Selected: {fileName}</p>}
+                {fileName && (
+                  <p className="mt-1 text-sm">Selected: {fileName}</p>
+                )}
 
-                {/* Upload progress / status */}
                 {uploading && uploadProgress != null && (
                   <div className="w-full mt-2">
                     <div className="text-sm">Uploading: {uploadProgress}%</div>
                     <div className="w-full bg-gray-200 rounded h-2 mt-1">
                       <div
                         style={{ width: `${uploadProgress}%` }}
-                        className="h-2 rounded"
+                        className="h-2 rounded bg-blue-500"
                       />
                     </div>
                   </div>
                 )}
 
-                {uploadError && <div className="text-sm text-red-600 mt-2">{uploadError}</div>}
-
-                {uploadedStagingResponse && (
-                  <div className="text-sm text-green-700 mt-2">
-                    Uploaded to staging ✓
-                  </div>
-                )}
+                {uploadError && <p className="text-red-500">{uploadError}</p>}
               </div>
 
-              <div>
-                <label className="block font-semibold">Title</label>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full border p-2 rounded"
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title"
+                className="w-full border px-2 py-1 rounded"
+                required
+              />
 
-              <div>
-                <label className="block font-semibold">Actionable Insights</label>
-                <textarea
-                  value={insights}
-                  onChange={(e) => setInsights(e.target.value)}
-                  className="w-full border p-2 rounded"
-                  rows={3}
-                  required
-                />
-              </div>
+              <textarea
+                value={insights}
+                onChange={(e) => setInsights(e.target.value)}
+                placeholder="Actionable Insights"
+                className="w-full border px-2 py-1 rounded"
+                required
+              />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold">Deadline</label>
-                  <input
-                    type="date"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full border p-2 rounded"
-                  />
-                </div>
+              <input
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="w-full border px-2 py-1 rounded"
+                required
+              />
 
-                <div>
-                  <label className="block font-semibold">Severity</label>
-                  <select
-                    value={severity}
-                    onChange={(e) => setSeverity(e.target.value as Notice["severity"])}
-                    className="w-full border p-2 rounded"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-              </div>
+              <select
+                value={severity}
+                onChange={(e) =>
+                  setSeverity(e.target.value as Notice["severity"])
+                }
+                className="w-full border px-2 py-1 rounded"
+              >
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
 
-              {/* Authorized By input (new) */}
-              <div>
-                <label className="block font-semibold">Authorized by</label>
-                <input
-                  type="text"
-                  value={authorizedBy}
-                  onChange={(e) => setAuthorizedBy(e.target.value)}
-                  className="w-full border p-2 rounded"
-                  placeholder="Name of authorizer"
-                />
-              </div>
+              <input
+                type="text"
+                value={authorizedBy}
+                onChange={(e) => setAuthorizedBy(e.target.value)}
+                placeholder="Authorized By"
+                className="w-full border px-2 py-1 rounded"
+              />
 
-              {/* Department selector with "All" button */}
-              <div>
-                <label className="block font-semibold mb-2">To Department</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={toggleAllDepartments}
+                  className={`px-2 py-1 border rounded ${
+                    isAllSelected ? "bg-blue-500 text-white" : "bg-gray-100"
+                  }`}
+                >
+                  Select All
+                </button>
 
-                <div className="flex flex-wrap gap-3 items-center">
-                  {/* "All" toggle */}
+                {ALL_DEPARTMENTS.map((dept) => (
                   <button
                     type="button"
-                    onClick={toggleAllDepartments}
-                    className={`p-1 m-1 rounded-lg border font-medium transition focus:outline-none ${
-                      isAllSelected
-                        ? "bg-blue-500 text-white border-blue-600"
-                        : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                    key={dept}
+                    onClick={() => toggleDepartment(dept)}
+                    className={`px-2 py-1 border rounded ${
+                      departments.includes(dept)
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100"
                     }`}
                   >
-                    All
+                    {dept}
                   </button>
-
-                  {ALL_DEPARTMENTS.map((dept) => {
-                    const isSelected = departments.includes(dept);
-                    return (
-                      <button
-                        key={dept}
-                        type="button"
-                        onClick={() => toggleDepartment(dept)}
-                        className={`p-1 m-1 rounded-lg border font-medium transition focus:outline-none ${
-                          isSelected
-                            ? "bg-blue-500 text-white border-blue-600"
-                            : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                        }`}
-                      >
-                        {dept}
-                      </button>
-                    );
-                  })}
-                </div>
+                ))}
               </div>
             </div>
           </Modal.Body>
 
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseUpload}>
-              Cancel
+              Close
             </Button>
-            <Button variant="primary" type="submit" disabled={uploading}>
+            <Button variant="primary" type="submit">
               Upload
             </Button>
           </Modal.Footer>

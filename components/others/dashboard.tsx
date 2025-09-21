@@ -1,5 +1,11 @@
 import Image from "next/image";
-import React, { useState, useRef } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  startTransition,
+} from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 
@@ -89,6 +95,8 @@ const Dashboard: React.FC = () => {
   const [uploadedStagingResponse, setUploadedStagingResponse] =
     useState<any>(null);
 
+  const [processing, setProcessing] = useState(false); // 🔹 overlay loader state
+
   const isAllSelected = departments.length === ALL_DEPARTMENTS.length;
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -115,28 +123,52 @@ const Dashboard: React.FC = () => {
   };
   const handleCloseUpload = () => setShowUploadModal(false);
 
+  const memoizedFormData = React.useMemo(
+    () => ({
+      title,
+      insights,
+      deadline,
+      severity,
+      authorizedBy,
+      departments,
+    }),
+    [title, insights, deadline, severity, authorizedBy, departments]
+  );
+
   // Auto-fill form when modal opens and Gemini has extracted notice
-  React.useEffect(() => {
-  // Make sure uploadedStagingResponse exists and has nested extractedNotice
-  const ex = uploadedStagingResponse?.extractedNotice?.extractedNotice;
-  if (ex) {
-    setTitle(ex.title ?? "");
-    setInsights(ex.insights ?? "");
-    setDeadline(ex.deadline ?? "");
-    setSeverity(ex.severity ?? "Low");
-    setAuthorizedBy(ex.authorizedBy ?? "");
+  // Auto-fill form when modal opens and Gemini has extracted notice
+  useEffect(() => {
+    if (uploadedStagingResponse) {
+      console.log("🔹 RECEIVED STAGING RESPONSE:", uploadedStagingResponse);
 
-    const depts = Array.isArray(ex.departments)
-      ? ex.departments
-      : typeof ex.departments === "string"
-      ? ex.departments.split(",").map((d) => d.trim())
-      : [];
-    setDepartments(depts);
+      const ex = uploadedStagingResponse?.extractedNotice?.extractedNotice;
+      if (ex) {
+        console.log("🔹 EXTRACTED DATA:", ex);
+        // Fill fields from Gemini extraction
+        setTitle(ex.title ?? "");
+        setInsights(ex.insights ?? "");
+        setDeadline(ex.deadline ?? "");
+        setSeverity(ex.severity ?? "Low");
+        setAuthorizedBy(ex.authorizedBy ?? "");
 
-    setShowUploadModal(true);
-  }
-}, [uploadedStagingResponse]);
+        const depts = Array.isArray(ex.departments)
+          ? ex.departments
+          : typeof ex.departments === "string"
+          ? ex.departments.split(",").map((d) => d.trim())
+          : [];
+        setDepartments(depts);
+      }
 
+      // Use setTimeout to ensure modal shows after state updates
+      setTimeout(() => {
+        startTransition(() => {
+          setShowUploadModal(true);
+          setProcessing(false);
+        });
+        console.log("🔹 PROCESSING STOPPED - MODAL SHOULD SHOW");
+      }, 100);
+    }
+  }, [uploadedStagingResponse]);
 
   async function uploadFileToStaging(file: File, endpoint: string) {
     return new Promise<any>((resolve, reject) => {
@@ -180,60 +212,72 @@ const Dashboard: React.FC = () => {
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  setUploadError(null);
-  setUploadedStagingResponse(null);
-  setUploadProgress(null);
-
-  if (!e.target.files || e.target.files.length === 0) return;
-
-  const file = e.target.files[0];
-  setFileName(file.name);
-
-  const stagingEndpoint = getStagingEndpointForFilename(file.name);
-
-  try {
-    setUploading(true);
-
-    // 1️⃣ Upload to staging
-    const stagingResponse = await uploadFileToStaging(file, stagingEndpoint);
-    setUploadedStagingResponse(stagingResponse ?? { ok: true });
-
-    // 2️⃣ If Gemini processing is needed (images or routed to summarization)
-    if (
-      stagingResponse.routedTo === "summarization" ||
-      stagingEndpoint.includes("image")
-    ) {
-      const form = new FormData();
-      form.append("file", file);
-
-      const geminiResp = await fetch(
-        "/api/summarization/image/summarization",
-        {
-          method: "POST",
-          body: form,
-        }
-      );
-
-      const geminiJson = await geminiResp.json();
-      console.log("Gemini Extracted:", geminiJson);
-
-      if (geminiJson.success && geminiJson.extractedNotice) {
-        setUploadedStagingResponse(geminiJson); // triggers useEffect to auto-fill
-      } else {
-        console.warn("Gemini returned no extractable notice:", geminiJson);
-      }
-    }
-  } catch (err: any) {
-    console.error("Upload/Gemini error:", err);
-    setUploadError(err?.message ?? "Upload failed");
-  } finally {
-    setUploading(false);
+    setProcessing(true);
+    console.log("🔹 PROCESSING STARTED");
+    setUploadError(null);
+    setUploadedStagingResponse(null);
     setUploadProgress(null);
 
-    // Reset file input to allow re-upload
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-};
+    if (!e.target.files || e.target.files.length === 0) {
+      setProcessing(false); // Add this line
+      return;
+    }
+
+    const file = e.target.files[0];
+    setFileName(file.name);
+
+    const stagingEndpoint = getStagingEndpointForFilename(file.name);
+
+    try {
+      setUploading(true);
+
+      // 1️⃣ Upload to staging
+      // 1️⃣ Upload to staging
+      const stagingResponse = await uploadFileToStaging(file, stagingEndpoint);
+      console.log("🔹 STAGING RESPONSE RECEIVED:", stagingResponse);
+
+      // Force a small delay to ensure proper batching
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      setUploadedStagingResponse(stagingResponse ?? { ok: true });
+
+      // 2️⃣ If Gemini processing is needed (images or routed to summarization)
+      if (
+        stagingResponse.routedTo === "summarization" ||
+        stagingEndpoint.includes("image")
+      ) {
+        const form = new FormData();
+        form.append("file", file);
+
+        const geminiResp = await fetch(
+          "/api/summarization/image/summarization",
+          {
+            method: "POST",
+            body: form,
+          }
+        );
+
+        const geminiJson = await geminiResp.json();
+        console.log("Gemini Extracted:", geminiJson);
+
+        if (geminiJson.success && geminiJson.extractedNotice) {
+          setUploadedStagingResponse(geminiJson); // triggers useEffect
+        } else {
+          console.warn("Gemini returned no extractable notice:", geminiJson);
+        }
+      }
+    } catch (err: any) {
+      console.error("Upload/Gemini error:", err);
+      setUploadError(err?.message ?? "Upload failed");
+      setProcessing(false); // Make sure this is here
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+      // Remove setProcessing(false) from here since it's handled in useEffect
+
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const toggleDepartment = (dept: string) => {
     setDepartments((prev) =>
@@ -278,6 +322,16 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex flex-col justify-center items-center w-full p-1">
+      {/* 🔹 Fullscreen Processing Overlay */}
+      {processing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-4 rounded-lg flex flex-col items-center">
+            <div className="loader border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin mb-3"></div>
+            <p className="text-lg font-semibold">Processing...</p>
+          </div>
+        </div>
+      )}
+
       <p className="text-3xl font-bold text-black m-1">Dashboard</p>
 
       <div

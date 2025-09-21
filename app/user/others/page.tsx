@@ -67,10 +67,10 @@ export default function Others() {
   return (
     <>
       <div 
-        className="m-2 p-2 rounded-xl transition-colors duration-300 ease-in-out"
+        className="m-2 p-1 rounded-xl transition-colors duration-300 ease-in-out"
         style={{ backgroundColor: currentTab?.color || '#c3facb' }}
       >
-        <p className="text-4xl text-blue-400 p-2 ml-3.5 font-bold">
+        <p className="text-4xl text-blue-400 ml-3.5 font-bold">
           Welcome
         </p>
         <p className="text-xl ml-8 text-gray-500 font-medium">{displayName}</p>

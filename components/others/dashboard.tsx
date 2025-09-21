@@ -11,8 +11,8 @@ type Notice = {
   severity: "High" | "Medium" | "Low";
   uploadTime: string;
   fileName?: string | null;
-  departments: string[]; // added departments here
-  authorizedBy?: string | null; // new
+  departments: string[];
+  authorizedBy?: string | null;
 };
 
 const initialNotices: Notice[] = [
@@ -53,6 +53,24 @@ const initialNotices: Notice[] = [
 
 const ALL_DEPARTMENTS = ["Engineering", "Design", "Operations", "Finance"];
 
+/**
+ * Helper: decide which API route to send the file to based on extension
+ */
+function getStagingEndpointForFilename(filename: string) {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+
+  const imageExt = ["jpg", "jpeg", "png", "webp"];
+  const docExt = ["ppt", "pptx", "doc", "docx", "xls", "xlsx", "pdf"];
+  const dataExt = ["txt", "json", "csv", "xml"];
+
+  if (imageExt.includes(ext)) return "/api/image/staging";
+  if (docExt.includes(ext)) return "/api/document/staging";
+  if (dataExt.includes(ext)) return "/api/dsf/staging";
+
+  // fallback to dsf (or choose whichever you prefer)
+  return "/api/dsf/staging";
+}
+
 const Dashboard: React.FC = () => {
   const [show, setShow] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
@@ -68,7 +86,13 @@ const Dashboard: React.FC = () => {
   const [severity, setSeverity] = useState<Notice["severity"]>("Low");
   const [fileName, setFileName] = useState<string | null>(null);
   const [departments, setDepartments] = useState<string[]>([]);
-  const [authorizedBy, setAuthorizedBy] = useState<string>(""); // new state
+  const [authorizedBy, setAuthorizedBy] = useState<string>("");
+
+  // upload state
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadedStagingResponse, setUploadedStagingResponse] = useState<any>(null);
 
   // computed helper for "All" button
   const isAllSelected = departments.length === ALL_DEPARTMENTS.length;
@@ -93,18 +117,96 @@ const Dashboard: React.FC = () => {
     setDeadline("");
     setSeverity("Low");
     setFileName(null);
-    setDepartments([]); // reset departments
-    setAuthorizedBy(""); // reset authorizedBy
+    setDepartments([]);
+    setAuthorizedBy("");
+    setUploadProgress(null);
+    setUploading(false);
+    setUploadError(null);
+    setUploadedStagingResponse(null);
     setShowUploadModal(true);
   };
 
   const handleCloseUpload = () => setShowUploadModal(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFileName(e.target.files[0].name);
-    } else {
+  /**
+   * Upload function using XHR to allow progress reporting.
+   * Sends file as 'file' field in FormData to the chosen staging route.
+   */
+  function uploadFileToStaging(file: File, endpoint: string) {
+    return new Promise<any>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const form = new FormData();
+      form.append("file", file);
+
+      xhr.open("POST", endpoint);
+
+      xhr.upload.onprogress = (ev) => {
+        if (ev.lengthComputable) {
+          const percent = Math.round((ev.loaded / ev.total) * 100);
+          setUploadProgress(percent);
+        }
+      };
+
+      xhr.onload = () => {
+        setUploading(false);
+        setUploadProgress(100);
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const resp = xhr.response ? JSON.parse(xhr.response) : null;
+            resolve(resp);
+          } catch (err) {
+            // non-json response
+            resolve({ raw: xhr.response });
+          }
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      };
+
+      xhr.onerror = () => {
+        setUploading(false);
+        reject(new Error("Network error during upload"));
+      };
+
+      setUploading(true);
+      setUploadError(null);
+      xhr.send(form);
+    });
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
+    setUploadedStagingResponse(null);
+    setUploadProgress(null);
+
+    if (!e.target.files || e.target.files.length === 0) {
       setFileName(null);
+      return;
+    }
+
+    const file = e.target.files[0];
+    setFileName(file.name);
+
+    // decide endpoint
+    const endpoint = getStagingEndpointForFilename(file.name);
+
+    try {
+      setUploading(true);
+      const response = await uploadFileToStaging(file, endpoint);
+      // response ideally contains staging id/url from your server
+      setUploadedStagingResponse(response ?? { ok: true });
+      setUploadProgress(100);
+      setUploading(false);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      setUploadError(err?.message ?? "Upload failed");
+      setUploading(false);
+      setUploadProgress(null);
+    } finally {
+      // clear input so same file can be reselected if needed
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -125,7 +227,7 @@ const Dashboard: React.FC = () => {
     const now = new Date();
     const uploadTime = now.toLocaleString(); // simple human readable
     const newNotice: Notice = {
-      id: String(Math.floor(Math.random() * 1000000)), // simple id
+      id: String(Math.floor(Math.random() * 1000000)),
       title: title || "Untitled Notice",
       insights: insights || "",
       deadline: deadline || "",
@@ -145,12 +247,15 @@ const Dashboard: React.FC = () => {
     setFileName(null);
     setDepartments([]);
     setAuthorizedBy("");
+    setUploadProgress(null);
+    setUploading(false);
+    setUploadError(null);
     setShowUploadModal(false);
   };
 
   return (
-    <div className="flex flex-col justify-center items-center w-full p-4">
-      <p className="text-3xl font-bold text-black m-2">Dashboard</p>
+    <div className="flex flex-col justify-center items-center w-full p-1">
+      <p className="text-3xl font-bold text-black m-1">Dashboard</p>
 
       {/* Top Bar */}
       <div
@@ -158,7 +263,7 @@ const Dashboard: React.FC = () => {
         style={{ maxWidth: 1100 }}
       >
         <button
-          className="bg-green-500 text-white border-2 border-white font-bold py-2 px-4 rounded-2xl "
+          className="bg-green-500 text-white border-2 border-white font-bold py-0.5 px-4 rounded-2xl "
           onClick={handleShowUpload}
         >
           Upload Notice
@@ -301,8 +406,34 @@ const Dashboard: React.FC = () => {
                   <Image src="/images/icons/upload.png" width={50} height={50} alt="Upload" />
                 </div>
                 {/* Hidden file input */}
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
                 {fileName && <p className="mt-1 text-sm">Selected: {fileName}</p>}
+
+                {/* Upload progress / status */}
+                {uploading && uploadProgress != null && (
+                  <div className="w-full mt-2">
+                    <div className="text-sm">Uploading: {uploadProgress}%</div>
+                    <div className="w-full bg-gray-200 rounded h-2 mt-1">
+                      <div
+                        style={{ width: `${uploadProgress}%` }}
+                        className="h-2 rounded"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {uploadError && <div className="text-sm text-red-600 mt-2">{uploadError}</div>}
+
+                {uploadedStagingResponse && (
+                  <div className="text-sm text-green-700 mt-2">
+                    Uploaded to staging ✓
+                  </div>
+                )}
               </div>
 
               <div>
@@ -407,7 +538,7 @@ const Dashboard: React.FC = () => {
             <Button variant="secondary" onClick={handleCloseUpload}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit">
+            <Button variant="primary" type="submit" disabled={uploading}>
               Upload
             </Button>
           </Modal.Footer>

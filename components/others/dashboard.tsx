@@ -12,6 +12,7 @@ type Notice = {
   uploadTime: string;
   fileName?: string | null;
   departments: string[]; // added departments here
+  authorizedBy?: string | null; // new
 };
 
 const initialNotices: Notice[] = [
@@ -24,6 +25,7 @@ const initialNotices: Notice[] = [
     uploadTime: "2025-09-20 10:30 AM",
     fileName: null,
     departments: ["Engineering", "Operations"],
+    authorizedBy: "CTO Office",
   },
   {
     id: "002",
@@ -34,6 +36,7 @@ const initialNotices: Notice[] = [
     uploadTime: "2025-09-19 04:15 PM",
     fileName: null,
     departments: ["Design"],
+    authorizedBy: "HR",
   },
   {
     id: "003",
@@ -44,6 +47,7 @@ const initialNotices: Notice[] = [
     uploadTime: "2025-09-18 09:00 AM",
     fileName: null,
     departments: ["Operations", "Finance"],
+    authorizedBy: "Safety Team",
   },
 ];
 
@@ -64,6 +68,10 @@ const Dashboard: React.FC = () => {
   const [severity, setSeverity] = useState<Notice["severity"]>("Low");
   const [fileName, setFileName] = useState<string | null>(null);
   const [departments, setDepartments] = useState<string[]>([]);
+  const [authorizedBy, setAuthorizedBy] = useState<string>(""); // new state
+
+  // computed helper for "All" button
+  const isAllSelected = departments.length === ALL_DEPARTMENTS.length;
 
   // file input ref
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -86,6 +94,7 @@ const Dashboard: React.FC = () => {
     setSeverity("Low");
     setFileName(null);
     setDepartments([]); // reset departments
+    setAuthorizedBy(""); // reset authorizedBy
     setShowUploadModal(true);
   };
 
@@ -105,6 +114,12 @@ const Dashboard: React.FC = () => {
     );
   };
 
+  const toggleAllDepartments = () => {
+    setDepartments((prev) =>
+      prev.length === ALL_DEPARTMENTS.length ? [] : [...ALL_DEPARTMENTS]
+    );
+  };
+
   const handleUploadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const now = new Date();
@@ -118,9 +133,18 @@ const Dashboard: React.FC = () => {
       uploadTime,
       fileName,
       departments: [...departments],
+      authorizedBy: authorizedBy || null,
     };
 
     setNotices((prev) => [newNotice, ...prev]);
+    // reset form after submit (optional)
+    setTitle("");
+    setInsights("");
+    setDeadline("");
+    setSeverity("Low");
+    setFileName(null);
+    setDepartments([]);
+    setAuthorizedBy("");
     setShowUploadModal(false);
   };
 
@@ -130,7 +154,7 @@ const Dashboard: React.FC = () => {
 
       {/* Top Bar */}
       <div
-        className="flex justify-between items-center m-2 p-1 w-full"
+        className="flex justify-between items-center p-1 w-full"
         style={{ maxWidth: 1100 }}
       >
         <button
@@ -185,17 +209,11 @@ const Dashboard: React.FC = () => {
               {notice.severity}
             </div>
             <div className="text-sm">
-              {notice.departments.length > 0
-                ? notice.departments.join(", ")
-                : "—"}
+              {notice.departments.length > 0 ? notice.departments.join(", ") : "—"}
             </div>
             <div>{notice.uploadTime}</div>
             <div>
-              <Button
-                variant="info"
-                size="sm"
-                onClick={() => handleShow(notice)}
-              >
+              <Button variant="info" size="sm" onClick={() => handleShow(notice)}>
                 View Info
               </Button>
             </div>
@@ -243,6 +261,11 @@ const Dashboard: React.FC = () => {
                   ? selectedNotice.departments.join(", ")
                   : "—"}
               </p>
+
+              <p>
+                <strong>Authorized by:</strong> {selectedNotice.authorizedBy ?? "—"}
+              </p>
+
               <p>
                 <strong>Upload Time:</strong> {selectedNotice.uploadTime}
               </p>
@@ -268,32 +291,18 @@ const Dashboard: React.FC = () => {
         <Modal.Header closeButton>
           <Modal.Title>Upload Notice</Modal.Title>
         </Modal.Header>
+
         <form onSubmit={handleUploadSubmit}>
           <Modal.Body>
             <div className="space-y-3">
               {/* File upload trigger */}
               <div className="flex flex-col items-center">
-                <div
-                  className="cursor-pointer inline-block"
-                  onClick={handleImageClick}
-                >
-                  <Image
-                    src="/images/icons/upload.png"
-                    width={50}
-                    height={50}
-                    alt="Upload"
-                  />
+                <div className="cursor-pointer inline-block" onClick={handleImageClick}>
+                  <Image src="/images/icons/upload.png" width={50} height={50} alt="Upload" />
                 </div>
                 {/* Hidden file input */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                {fileName && (
-                  <p className="mt-1 text-sm">Selected: {fileName}</p>
-                )}
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                {fileName && <p className="mt-1 text-sm">Selected: {fileName}</p>}
               </div>
 
               <div>
@@ -307,9 +316,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold">
-                  Actionable Insights
-                </label>
+                <label className="block font-semibold">Actionable Insights</label>
                 <textarea
                   value={insights}
                   onChange={(e) => setInsights(e.target.value)}
@@ -334,9 +341,7 @@ const Dashboard: React.FC = () => {
                   <label className="block font-semibold">Severity</label>
                   <select
                     value={severity}
-                    onChange={(e) =>
-                      setSeverity(e.target.value as Notice["severity"])
-                    }
+                    onChange={(e) => setSeverity(e.target.value as Notice["severity"])}
                     className="w-full border p-2 rounded"
                   >
                     <option value="Low">Low</option>
@@ -346,10 +351,36 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Department selector as toggle buttons */}
+              {/* Authorized By input (new) */}
+              <div>
+                <label className="block font-semibold">Authorized by</label>
+                <input
+                  type="text"
+                  value={authorizedBy}
+                  onChange={(e) => setAuthorizedBy(e.target.value)}
+                  className="w-full border p-2 rounded"
+                  placeholder="Name of authorizer"
+                />
+              </div>
+
+              {/* Department selector with "All" button */}
               <div>
                 <label className="block font-semibold mb-2">To Department</label>
-                <div className="flex flex-wrap gap-3">
+
+                <div className="flex flex-wrap gap-3 items-center">
+                  {/* "All" toggle */}
+                  <button
+                    type="button"
+                    onClick={toggleAllDepartments}
+                    className={`p-1 m-1 rounded-lg border font-medium transition focus:outline-none ${
+                      isAllSelected
+                        ? "bg-blue-500 text-white border-blue-600"
+                        : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                    }`}
+                  >
+                    All
+                  </button>
+
                   {ALL_DEPARTMENTS.map((dept) => {
                     const isSelected = departments.includes(dept);
                     return (
@@ -368,15 +399,10 @@ const Dashboard: React.FC = () => {
                     );
                   })}
                 </div>
-
-                {departments.length > 0 && (
-                  <p className="mt-2 text-sm text-gray-600">
-                    Selected: {departments.join(", ")}
-                  </p>
-                )}
               </div>
             </div>
           </Modal.Body>
+
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseUpload}>
               Cancel

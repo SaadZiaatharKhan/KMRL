@@ -27,12 +27,12 @@ Extract the details from the document and generate JSON in the format:
 {
   "success": true,
   "extractedNotice": {
-    "title": "System Update",
-    "insights": "Apply patch before downtime",
-    "deadline": "2025-09-25",
-    "severity": "High",
-    "authorizedBy": "CTO Office",
-    "departments": ["Engineering", "Operations"]
+    "title": "string",
+  "insights": "string",
+  "deadline": "YYYY-MM-DD",
+  "severity": "High | Medium | Low",
+  "authorizedBy": "string",
+  "departments": ["Engineering", "Design", "Operations", "Finance"]
   }
 }
 Return only valid JSON. Do NOT include backticks, explanations, or markdown.`;
@@ -95,14 +95,18 @@ Return only valid JSON. Do NOT include backticks, explanations, or markdown.`;
           message: "Gemini returned no text",
           debug: {
             candidatesLength: response.candidates?.length || 0,
-            candidateStructure: response.candidates?.[0] ? {
-              hasContent: !!response.candidates[0].content,
-              contentType: typeof response.candidates[0].content,
-              contentKeys: response.candidates[0].content ? Object.keys(response.candidates[0].content) : [],
-              contentIsArray: Array.isArray(response.candidates[0].content),
-            } : null,
-            fullResponse: JSON.stringify(response, null, 2)
-          }
+            candidateStructure: response.candidates?.[0]
+              ? {
+                  hasContent: !!response.candidates[0].content,
+                  contentType: typeof response.candidates[0].content,
+                  contentKeys: response.candidates[0].content
+                    ? Object.keys(response.candidates[0].content)
+                    : [],
+                  contentIsArray: Array.isArray(response.candidates[0].content),
+                }
+              : null,
+            fullResponse: JSON.stringify(response, null, 2),
+          },
         },
         { status: 500 }
       );
@@ -110,8 +114,8 @@ Return only valid JSON. Do NOT include backticks, explanations, or markdown.`;
 
     // Clean the text output (remove potential markdown formatting)
     const cleanedText = textOutput
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/gi, '')
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*/gi, "")
       .trim();
 
     // Parse JSON safely
@@ -125,7 +129,7 @@ Return only valid JSON. Do NOT include backticks, explanations, or markdown.`;
           message: "Gemini returned invalid JSON",
           rawText: cleanedText,
           originalText: textOutput,
-          error: err instanceof Error ? err.message : String(err)
+          error: err instanceof Error ? err.message : String(err),
         },
         { status: 500 }
       );

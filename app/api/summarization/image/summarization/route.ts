@@ -32,12 +32,12 @@ export async function POST(req: Request) {
     {
   "success": true,
   "extractedNotice": {
-    "title": "System Update",
-    "insights": "Apply patch before downtime",
-    "deadline": "2025-09-25",
-    "severity": "High",
-    "authorizedBy": "CTO Office",
-    "departments": ["Engineering", "Operations"]
+    "title": "string",
+  "insights": "string",
+  "deadline": "YYYY-MM-DD",
+  "severity": "High | Medium | Low",
+  "authorizedBy": "string",
+  "departments": ["Engineering", "Design", "Operations", "Finance"]
   }
 }
 Give json only and nothing else. Return only valid json without backticks or any other markdowns.`;

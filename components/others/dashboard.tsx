@@ -69,7 +69,7 @@ function getStagingEndpointForFilename(filename: string) {
   if (docExt.includes(ext)) return "/api/summarization/document/staging";
   if (dataExt.includes(ext)) return "/api/summarization/dsf/staging";
 
-  return "/api/summarization/dsf/staging";
+  return "/api/summarization/document/staging";
 }
 
 const Dashboard: React.FC = () => {
@@ -136,39 +136,37 @@ const Dashboard: React.FC = () => {
 
   // 🔹 Null-safe auto-fill for both images and documents
   useEffect(() => {
-    if (uploadedStagingResponse) {
-      console.log("🔹 RECEIVED STAGING RESPONSE:", uploadedStagingResponse);
+  if (uploadedStagingResponse) {
+    console.log("🔹 RECEIVED STAGING RESPONSE:", uploadedStagingResponse);
 
-      // Normalize Gemini response
-      const ex =
-        uploadedStagingResponse?.extractedNotice?.extractedNotice ??
-        uploadedStagingResponse?.extractedNotice; // handle documents
-      if (ex) {
-        console.log("🔹 EXTRACTED DATA:", ex);
+    const ex =
+      uploadedStagingResponse?.extractedNotice?.extractedNotice ??
+      uploadedStagingResponse?.extractedNotice;
 
-        setTitle(ex.title ?? "");
-        setInsights(ex.insights ?? "");
-        setDeadline(ex.deadline ?? ""); // allow empty string for null
-        setSeverity(ex.severity ?? "Low");
-        setAuthorizedBy(ex.authorizedBy ?? "");
+    if (ex) {
+      setTitle(ex.title ?? "");
+      setInsights(ex.insights ?? "");
+      setDeadline(ex.deadline ?? "");
+      setSeverity(ex.severity ?? "Low");
+      setAuthorizedBy(ex.authorizedBy ?? "");
 
-        const depts = Array.isArray(ex.departments)
-          ? ex.departments
-          : typeof ex.departments === "string"
-          ? ex.departments.split(",").map((d) => d.trim())
-          : [];
-        setDepartments(depts);
-      }
-
-      setTimeout(() => {
-        startTransition(() => {
-          setShowUploadModal(true);
-          setProcessing(false);
-        });
-        console.log("🔹 PROCESSING STOPPED - MODAL SHOULD SHOW");
-      }, 100);
+      const depts = Array.isArray(ex.departments)
+        ? ex.departments
+        : typeof ex.departments === "string"
+        ? ex.departments.split(",").map((d) => d.trim())
+        : [];
+      setDepartments(depts);
     }
-  }, [uploadedStagingResponse]);
+
+    setTimeout(() => {
+      startTransition(() => {
+        setShowUploadModal(true);
+        setProcessing(false);
+      });
+    }, 100);
+  }
+}, [uploadedStagingResponse]);
+
 
   async function uploadFileToStaging(file: File, endpoint: string) {
     return new Promise<any>((resolve, reject) => {
@@ -248,9 +246,11 @@ const Dashboard: React.FC = () => {
         form.append("file", file);
 
         const geminiEndpoint =
-          stagingEndpoint.includes("image")
-            ? "/api/summarization/image/summarization"
-            : "/api/summarization/document/summarization";
+        stagingEndpoint.includes("image")
+          ? "/api/summarization/image/summarization"
+          : stagingEndpoint.includes("document")
+          ? "/api/summarization/document/summarization"
+          : "/api/summarization/dsf/staging";
 
         const geminiResp = await fetch(geminiEndpoint, {
           method: "POST",

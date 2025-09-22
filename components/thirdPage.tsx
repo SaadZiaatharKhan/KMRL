@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const ThirdPage = () => {
   return (
-    <div className="min-h-screen w-full flex flex-col items-center bg-white">
+    <div className="min-h-screen w-full flex flex-col items-center bg-white overflow-x-hidden">
       {/* Page title */}
       <header className="w-full py-8">
         <h1 className="text-2xl font-bold text-center text-gray-900">
@@ -11,123 +11,112 @@ const ThirdPage = () => {
         </h1>
       </header>
 
-      {/* Main layout */}
-      <main
-        className="flex-1 w-full grid"
-        style={{ gridTemplateColumns: "1fr 800px 1fr", alignItems: "center" }}
-      >
-        {/* LEFT COLUMN */}
-        <div className="flex flex-col items-start justify-between h-[600px] pl-16">
-          {/* Top-left */}
-          <div
-            className="w-[300px] h-[200px] rounded-3xl shadow-xl p-6 flex flex-col justify-evenly 
-                       transform transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-2xl ml-8"
-            style={{
-              background: "linear-gradient(135deg,#E6FFFA 0%, #BDECF0 100%)",
-            }}
-          >
-            <div className="flex justify-center">
-              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
+      <main className="flex-1 w-full max-w-7xl px-4">
+        <div 
+          className="grid h-full items-center gap-8"
+          style={{ 
+            gridTemplateColumns: "minmax(200px, 1fr) minmax(400px, 800px) minmax(200px, 1fr)",
+            minHeight: "600px"
+          }}
+        >
+          {/* LEFT COLUMN - two cards spaced top and bottom */}
+          <div className="flex flex-col items-center justify-between h-[600px]">
+            {/* Top-left (cyan) */}
+            <div
+              className="w-[300px] h-44 rounded-3xl shadow-xl p-6 flex flex-col justify-evenly transform transition-transform duration-300 hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg,#E6FFFA 0%, #BDECF0 100%)",
+              }}
+            >
+              <div className="flex justify-center">
                 <Image
                   src={"/images/thirdpage_icons/loop-square.svg"}
-                  width={24}
-                  height={24}
-                  alt="automate-icon"
+                  width={30}
+                  height={30}
+                  alt={"automate-icon"}
                 />
               </div>
+              <p className="text-xl font-semibold text-center text-gray-900">
+                Automate Business Workflows
+              </p>
             </div>
-            <p className="text-xl font-semibold text-center text-gray-900">
-              Automate Business Workflows
-            </p>
-          </div>
-
-          {/* Bottom-left */}
-          <div
-            className="w-[300px] h-[200px] rounded-3xl shadow-xl p-6 flex flex-col justify-evenly 
-                       transform transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-2xl ml-8"
-            style={{
-              background: "linear-gradient(135deg,#F0FFF4 0%, #D1FADF 100%)",
-            }}
-          >
-            <div className="flex justify-center">
-              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
+            
+            {/* Bottom-left (mint/green) */}
+            <div
+              className="w-[300px] h-44 mb-8 rounded-3xl shadow-xl p-6 flex flex-col justify-evenly transform transition-transform duration-300 hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg,#F0FFF4 0%, #D1FADF 100%)",
+              }}
+            >
+              <div className="flex justify-center">
                 <Image
                   src={"/images/thirdpage_icons/triangle-arrow-bolt.svg"}
-                  width={24}
-                  height={24}
-                  alt="sustainability-icon"
+                  width={30}
+                  height={30}
+                  alt={"sustainability-icon"}
                 />
               </div>
+              <p className="text-xl font-semibold text-center text-gray-900">
+                Achieve Sustainability Goals
+              </p>
             </div>
-            <p className="text-xl font-semibold text-center text-gray-900">
-              Achieve Sustainability Goals
-            </p>
           </div>
-        </div>
 
-        {/* CENTER COLUMN */}
-        <div className="relative flex justify-center items-center">
-          <div className="w-[200px] sm:w-[260px] md:w-[320px] lg:w-[380px] h-[120px] sm:h-[150px] md:h-[200px] lg:h-[240px] 
-                          flex justify-center items-center overflow-hidden rounded-xl">
+          {/* CENTER COLUMN - image stays centered and unchanged */}
+          <div className="relative w-full h-[400px] flex justify-center items-center">
             <Image
               src="/images/Gemini.webp"
               alt="Gemini"
-              width={600}
-              height={400}
-              className="object-contain transition-transform duration-300 ease-in hover:scale-110 rounded-2xl"
-              priority
+              fill
+              className="hover:scale-115 ease-in duration-300 object-contain"
             />
           </div>
-        </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="flex flex-col items-end justify-between h-[600px] pr-16">
-          {/* Top-right */}
-          <div
-            className="w-[300px] h-[200px] rounded-3xl shadow-xl p-6 flex flex-col justify-evenly 
-                       transform transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-2xl mr-8"
-            style={{
-              background: "linear-gradient(135deg,#F5F3FF 0%, #E9D5FF 100%)",
-            }}
-          >
-            <div className="flex justify-center">
-              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
+          {/* RIGHT COLUMN - two cards spaced top and bottom */}
+          <div className="flex flex-col items-center justify-between h-[600px]">
+            {/* Top-right (lavender/purple) */}
+            <div
+              className="w-[300px] h-44 rounded-3xl shadow-xl p-6 flex flex-col justify-evenly transform transition-transform duration-300 hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg,#F5F3FF 0%, #E9D5FF 100%)",
+              }}
+            >
+              <div className="flex justify-center">
                 <Image
                   src={"/images/thirdpage_icons/lightbulb-on.svg"}
-                  width={24}
-                  height={24}
-                  alt="ai-icon"
+                  width={30}
+                  height={30}
+                  alt={"ai-icon"}
                 />
               </div>
+              <p className="text-xl font-semibold text-center text-gray-900">
+                AI Document Summarization
+              </p>
             </div>
-            <p className="text-xl font-semibold text-center text-gray-900">
-              AI Document Summarization
-            </p>
-          </div>
-
-          {/* Bottom-right */}
-          <div
-            className="w-[300px] h-[200px] rounded-3xl shadow-xl p-6 flex flex-col justify-evenly 
-                       transform transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:shadow-2xl mr-8"
-            style={{
-              background: "linear-gradient(135deg,#FFF7ED 0%, #FFEDD5 100%)",
-            }}
-          >
-            <div className="flex justify-center">
-              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
+            
+            {/* Bottom-right (warm amber) */}
+            <div
+              className="w-[300px] h-44 mb-8 rounded-3xl shadow-xl p-6 flex flex-col justify-evenly transform transition-transform duration-300 hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg,#FFF7ED 0%, #FFEDD5 100%)",
+              }}
+            >
+              <div className="flex justify-center">
                 <Image
                   src={"/images/thirdpage_icons/hard-disk-scan.svg"}
-                  width={24}
-                  height={24}
-                  alt="scan-icon"
+                  width={30}
+                  height={30}
+                  alt={"scan-icon"}
                 />
               </div>
+              <p className="text-xl font-semibold text-center text-gray-900">
+                Scan & Archive Solutions
+              </p>
             </div>
-            <p className="text-xl font-semibold text-center text-gray-900">
-              Scan & Archive Solutions
-            </p>
-  </div>
-</div>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 };
 

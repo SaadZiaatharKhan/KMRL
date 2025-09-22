@@ -49,7 +49,7 @@ const Dashboard = () => {
         className="flex justify-between items-center mx-2 p-1"
         style={{ width: "calc(100vw - 1rem)" }}
       >
-        <button className="bg-green-500 text-white font-bold py-2 px-4 rounded-2xl">
+        <button style={{borderRadius:"20px",padding:"10px 20px"}} className="rounded-2xl bg-green-500 text-white font-bold py-2 px-4 ">
           Upload Notice
         </button>
         <input

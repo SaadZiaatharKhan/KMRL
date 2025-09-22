@@ -1,10 +1,5 @@
 import Image from "next/image";
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  startTransition,
-} from "react";
+import React, { useState, useRef, useEffect, startTransition } from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 
@@ -136,37 +131,36 @@ const Dashboard: React.FC = () => {
 
   // 🔹 Null-safe auto-fill for both images and documents
   useEffect(() => {
-  if (uploadedStagingResponse) {
-    console.log("🔹 RECEIVED STAGING RESPONSE:", uploadedStagingResponse);
+    if (uploadedStagingResponse) {
+      console.log("🔹 RECEIVED STAGING RESPONSE:", uploadedStagingResponse);
 
-    const ex =
-      uploadedStagingResponse?.extractedNotice?.extractedNotice ??
-      uploadedStagingResponse?.extractedNotice;
+      const ex =
+        uploadedStagingResponse?.extractedNotice?.extractedNotice ??
+        uploadedStagingResponse?.extractedNotice;
 
-    if (ex) {
-      setTitle(ex.title ?? "");
-      setInsights(ex.insights ?? "");
-      setDeadline(ex.deadline ?? "");
-      setSeverity(ex.severity ?? "Low");
-      setAuthorizedBy(ex.authorizedBy ?? "");
+      if (ex) {
+        setTitle(ex.title ?? "");
+        setInsights(ex.insights ?? "");
+        setDeadline(ex.deadline ?? "");
+        setSeverity(ex.severity ?? "Low");
+        setAuthorizedBy(ex.authorizedBy ?? "");
 
-      const depts = Array.isArray(ex.departments)
-        ? ex.departments
-        : typeof ex.departments === "string"
-        ? ex.departments.split(",").map((d) => d.trim())
-        : [];
-      setDepartments(depts);
+        const depts = Array.isArray(ex.departments)
+          ? ex.departments
+          : typeof ex.departments === "string"
+          ? ex.departments.split(",").map((d) => d.trim())
+          : [];
+        setDepartments(depts);
+      }
+
+      setTimeout(() => {
+        startTransition(() => {
+          setShowUploadModal(true);
+          setProcessing(false);
+        });
+      }, 100);
     }
-
-    setTimeout(() => {
-      startTransition(() => {
-        setShowUploadModal(true);
-        setProcessing(false);
-      });
-    }, 100);
-  }
-}, [uploadedStagingResponse]);
-
+  }, [uploadedStagingResponse]);
 
   async function uploadFileToStaging(file: File, endpoint: string) {
     return new Promise<any>((resolve, reject) => {
@@ -245,8 +239,7 @@ const Dashboard: React.FC = () => {
         const form = new FormData();
         form.append("file", file);
 
-        const geminiEndpoint =
-        stagingEndpoint.includes("image")
+        const geminiEndpoint = stagingEndpoint.includes("image")
           ? "/api/summarization/image/summarization"
           : stagingEndpoint.includes("document")
           ? "/api/summarization/document/summarization"
@@ -344,7 +337,8 @@ const Dashboard: React.FC = () => {
         style={{ maxWidth: 1100 }}
       >
         <button
-          className="bg-green-500 text-white border-2 border-white font-bold py-0.5 px-4 rounded-2xl "
+          style={{ borderRadius: "20px" }}
+          className="bg-green-500 text-white border-2 border-white font-bold py-2 px-4  "
           onClick={handleShowUpload}
         >
           Upload Notice
@@ -476,136 +470,138 @@ const Dashboard: React.FC = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Upload Modal */}
-      <Modal show={showUploadModal} onHide={handleCloseUpload} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Upload Notice</Modal.Title>
-        </Modal.Header>
+{/* Upload Modal - reliable scrollable modal */}
+<Modal show={showUploadModal} onHide={handleCloseUpload} centered>
+  <Modal.Header closeButton>
+    <Modal.Title>Upload Notice</Modal.Title>
+  </Modal.Header>
 
-        <form onSubmit={handleUploadSubmit}>
-          <Modal.Body>
-            <div className="space-y-3">
-              <div className="flex flex-col items-center">
-                <div
-                  className="cursor-pointer inline-block"
-                  onClick={handleImageClick}
-                >
-                  <Image
-                    src="/images/icons/upload.png"
-                    width={50}
-                    height={50}
-                    alt="Upload"
-                  />
-                </div>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                {fileName && (
-                  <p className="mt-1 text-sm">Selected: {fileName}</p>
-                )}
+  <form onSubmit={handleUploadSubmit}>
+    {/* Make the body a fixed-height scroll area */}
+    <Modal.Body className="p-4">
+      {/* inner wrapper gets the scroll behaviour and safe padding for scrollbar */}
+      <div className="max-h-[60vh] sm:max-h-[70vh] overflow-y-auto pr-2 space-y-3">
+        <div className="flex flex-col items-center">
+          <div className="cursor-pointer inline-block" onClick={handleImageClick}>
+            <Image src="/images/icons/upload.png" width={55} height={55} alt="Upload" />
+          </div>
 
-                {uploading && uploadProgress != null && (
-                  <div className="w-full mt-2">
-                    <div className="text-sm">Uploading: {uploadProgress}%</div>
-                    <div className="w-full bg-gray-200 rounded h-2 mt-1">
-                      <div
-                        style={{ width: `${uploadProgress}%` }}
-                        className="h-2 rounded bg-blue-500"
-                      />
-                    </div>
-                  </div>
-                )}
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+          {fileName && <p className="mt-1 text-sm">Selected: {fileName}</p>}
 
-                {uploadError && <p className="text-red-500">{uploadError}</p>}
-              </div>
-
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title"
-                className="w-full border px-2 py-1 rounded"
-                required
-              />
-
-              <textarea
-                value={insights}
-                onChange={(e) => setInsights(e.target.value)}
-                placeholder="Actionable Insights"
-                className="w-full border px-2 py-1 rounded"
-                required
-              />
-
-              <input
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="w-full border px-2 py-1 rounded"
-                required
-              />
-
-              <select
-                value={severity}
-                onChange={(e) =>
-                  setSeverity(e.target.value as Notice["severity"])
-                }
-                className="w-full border px-2 py-1 rounded"
-              >
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-
-              <input
-                type="text"
-                value={authorizedBy}
-                onChange={(e) => setAuthorizedBy(e.target.value)}
-                placeholder="Authorized By"
-                className="w-full border px-2 py-1 rounded"
-              />
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={toggleAllDepartments}
-                  className={`px-2 py-1 border rounded ${
-                    isAllSelected ? "bg-blue-500 text-white" : "bg-gray-100"
-                  }`}
-                >
-                  Select All
-                </button>
-
-                {ALL_DEPARTMENTS.map((dept) => (
-                  <button
-                    type="button"
-                    key={dept}
-                    onClick={() => toggleDepartment(dept)}
-                    className={`px-2 py-1 border rounded ${
-                      departments.includes(dept)
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100"
-                    }`}
-                  >
-                    {dept}
-                  </button>
-                ))}
+          {uploading && uploadProgress != null && (
+            <div className="w-full mt-2">
+              <div className="text-sm">Uploading: {uploadProgress}%</div>
+              <div className="w-full bg-gray-200 rounded h-2 mt-1">
+                <div style={{ width: `${uploadProgress}%` }} className="h-2 rounded bg-blue-500" />
               </div>
             </div>
-          </Modal.Body>
+          )}
+          {uploadError && <p className="text-red-500">{uploadError}</p>}
+        </div>
 
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseUpload}>
-              Close
-            </Button>
-            <Button variant="primary" type="submit">
-              Upload
-            </Button>
-          </Modal.Footer>
-        </form>
-      </Modal>
+        {/* Title */}
+        <label htmlFor="title" className="block mb-0 text-sm font-medium text-gray-700">Title</label>
+        <input
+          id="title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Enter your title..."
+          className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 px-3 py-1.5 mb-2 rounded-md text-gray-700 placeholder-gray-400 outline-none transition-all duration-150"
+          required
+        />
+
+        {/* Insights */}
+        <label htmlFor="insights" className="block mb-0 text-sm font-medium text-gray-700">Actionable Insights</label>
+        <textarea
+          id="insights"
+          value={insights}
+          onChange={(e) => setInsights(e.target.value)}
+          placeholder="Actionable Insights"
+          rows={4}
+          className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 px-3 py-1.5 mb-2 rounded-md text-gray-700 placeholder-gray-400 outline-none transition-all duration-150 resize-y"
+          required
+        />
+
+        {/* ✅ Deadline + Severity (side by side on sm+, stacked on xs) */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Deadline */}
+          <div className="flex-1">
+            <label htmlFor="deadline" className="block mb-1 text-sm font-medium text-gray-700">
+              DeadLine
+            </label>
+            <input
+              id="deadline"
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 py-1 px-3 rounded-md text-gray-700 outline-none transition-all duration-150"
+              required
+            />
+          </div>
+
+          {/* Severity */}
+          <div className="w-full sm:w-40">
+            <label htmlFor="severity" className="block mb-1 text-sm font-medium text-gray-700">
+              Severity
+            </label>
+            <select
+              id="severity"
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value as Notice["severity"])}
+              className="w-full border border-gray-300 py-1 px-3 rounded-md text-gray-700 outline-none transition-all duration-150"
+            >
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Authorized By */}
+        <label htmlFor="authorizedBy" className="block mb-0 text-sm font-medium text-gray-700">Authorized By</label>
+        <input
+          id="authorizedBy"
+          type="text"
+          value={authorizedBy}
+          onChange={(e) => setAuthorizedBy(e.target.value)}
+          placeholder="Authorized By"
+          className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 px-3 py-1 mb-2 rounded-md text-gray-700 outline-none transition-all duration-150"
+        />
+
+        {/* Departments */}
+        <div className="flex flex-wrap gap-3 mt-2">
+          <button
+            type="button"
+            onClick={toggleAllDepartments}
+            className={`px-2 py-1 border rounded ${isAllSelected ? "bg-blue-500 text-white" : "bg-gray-100"}`}
+          >
+            Select All
+          </button>
+
+          {ALL_DEPARTMENTS.map((dept) => (
+            <button
+              type="button"
+              key={dept}
+              onClick={() => toggleDepartment(dept)}
+              className={`px-2 py-1 border rounded ${departments.includes(dept) ? "bg-blue-500 text-white" : "bg-gray-100"}`}
+            >
+              {dept}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Modal.Body>
+
+    <Modal.Footer>
+      <Button variant="secondary" onClick={handleCloseUpload}>Close</Button>
+      <Button variant="primary" type="submit">Upload</Button>
+    </Modal.Footer>
+  </form>
+</Modal>
+
+
     </div>
   );
 };

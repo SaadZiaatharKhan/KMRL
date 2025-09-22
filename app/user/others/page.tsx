@@ -90,15 +90,15 @@ export default function Others() {
         {tabs.map((tab) => (
           <button 
             key={tab.id}
-            className={`p-1 m-1 transition-all duration-200 ease-in-out ${
-              activeTab === tab.id ? 'border-2 border-white rounded-lg' : ''
+            className={` m-1 transition-all duration-200 ease-in-out ${
+              activeTab === tab.id ? 'border-2 border-white rounded-xl' : ''
             }`}
             onClick={() => setActiveTab(tab.id)}
           >
             <Image 
               src={tab.icon} 
-              width={30} 
-              height={30} 
+              width={27} 
+              height={27} 
               alt={tab.alt}
             />
           </button>

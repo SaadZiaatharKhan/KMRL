@@ -195,8 +195,6 @@ const HeroSection: React.FC = () => {
       </nav>
 
       <div className="absolute inset-0 z-30 flex flex-col justify-center items-center text-center px-4 sm:px-16 text-white pointer-events-none">
-        {/* Headline */}
-<<<<<<< HEAD
         <h1 className="">
           <span className="block text-center text-3xl sm:text-4xl lg:text-6xl font-extrabold mb-3 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg">
             INFORM.
@@ -207,14 +205,6 @@ const HeroSection: React.FC = () => {
           <span className="block text-center text-3xl sm:text-4xl lg:text-6xl font-extrabold mb-3 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg">
             SUCCEED.
           </span>
-=======
-        <h1
-          className="text-6xl sm:text-7xl lg:text-8xl font-extrabold mb-4 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg"
-        >
-          <span className="block text-center">INFORM.</span>
-          <span className="block text-center">ACT.</span>
-          <span className="block text-center">SUCCEED.</span>
->>>>>>> 5c8e5e4dc481159095cb6105d57ce7eb9ff991e9
         </h1>
 
         <p className="text-lg sm:text-xl mb-3 opacity-90 text-center animate-fade-in delay-200 drop-shadow-md">

@@ -346,6 +346,7 @@ const Sign_Up = () => {
 
             <div className="flex justify-center">
               <button
+              style={{borderRadius: "20px", padding: "10px", fontWeight: "bold", fontSize: "15px"}}
                 type="submit"
                 className={`rounded-2xl p-2 mt-2 text-white font-medium w-1/2 ${
                   isFormValid
@@ -363,7 +364,7 @@ const Sign_Up = () => {
 
       {/* RIGHT - info / image side */}
       <div className="w-1/2 bg-[#00C951] rounded-l-full flex flex-col items-center justify-center text-white h-screen">
-        <div className="flex flex-col items-center justify-center gap-4">
+        <div className="flex flex-col items-center justify-center gap-2">
           <div className="w-48 h-48 relative">
             <Image
               src="/images/sign-up.svg"
@@ -374,6 +375,7 @@ const Sign_Up = () => {
           </div>
           <p className="text-2xl font-medium">Already Have An Account</p>
           <button
+          style={{fontWeight: "bold", fontSize: "20px"}}
             onClick={() => router.push("/auth/login")}
             className="text-2xl font-bold underline"
           >

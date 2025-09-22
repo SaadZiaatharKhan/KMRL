@@ -14,7 +14,10 @@ const HeroSection: React.FC = () => {
 
   const [index, setIndex] = useState<number>(0); // current logical index
   const [activeBuffer, setActiveBuffer] = useState<0 | 1>(0); // which <video> is currently visible
-  const videoRefs = [useRef<HTMLVideoElement | null>(null), useRef<HTMLVideoElement | null>(null)];
+  const videoRefs = [
+    useRef<HTMLVideoElement | null>(null),
+    useRef<HTMLVideoElement | null>(null),
+  ];
 
   const getVideo = (buffer: 0 | 1) => videoRefs[buffer].current;
 
@@ -132,7 +135,8 @@ const HeroSection: React.FC = () => {
   };
 
   const next = () => goTo((index + 1) % videoSources.length);
-  const prev = () => goTo((index - 1 + videoSources.length) % videoSources.length);
+  const prev = () =>
+    goTo((index - 1 + videoSources.length) % videoSources.length);
 
   return (
     <section className="relative w-full h-screen bg-black overflow-hidden">
@@ -160,51 +164,65 @@ const HeroSection: React.FC = () => {
       <div className="absolute inset-0 bg-black/28" style={{ zIndex: 10 }} />
 
       {/* top-right nav (kept minimal) - clickable because hero text won't block it */}
-      <nav className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20 pointer-events-auto">
-  {/* Left Corner: Logo */}
-  <div className="flex items-center ">
-  <Image 
-    src="/images/KMRL.webp" 
-    width={150} 
-    height={150} 
-    alt="KMRL" 
-    className=""
-  />
-  </div>
-  {/* Right Corner: Buttons */}
-  <div className="flex gap-4">
-    <button
-      onClick={() => (window.location.href = "/auth/login")}
-      className="px-8 py-2 rounded-md bg-teal-500 text-white font-bold transition duration-200 hover:bg-white hover:text-black border-2 border-transparent hover:border-teal-500 cursor-pointer"
-    >
-      Login
-    </button>
-   <button
-      onClick={() => (window.location.href = "/auth/sign-up")}
-      className="px-8 py-2 rounded-md bg-teal-500 text-white font-bold transition duration-200 hover:bg-white hover:text-black border-2 border-transparent hover:border-teal-500 cursor-pointer"
-    >
-      Sign Up
-    </button>
-  </div>
-</nav>
+      <nav className="absolute top-0 left-0 right-0 p-3 flex justify-between items-center z-20 pointer-events-auto">
+        {/* Left Corner: Logo */}
+        <div className="flex items-center ">
+          <Image
+            src="/images/KMRL.webp"
+            width={90}
+            height={90}
+            alt="KMRL"
+            className=""
+          />
+        </div>
+        {/* Right Corner: Buttons */}
+        <div className="flex gap-4">
+          <button
+            style={{ borderRadius: "4px" }}
+            onClick={() => (window.location.href = "/auth/login")}
+            className="px-3 py-1 rounded-md bg-teal-500 text-white font-semibold transition duration-200 hover:bg-white hover:text-black border-2 border-transparent hover:border-teal-500 cursor-pointer"
+          >
+            Login
+          </button>
+          <button
+            style={{ borderRadius: "4px" }}
+            onClick={() => (window.location.href = "/auth/sign-up")}
+            className="px-3 py-1 rounded-md bg-teal-500 text-white font-semibold transition duration-200 hover:bg-white hover:text-black border-2 border-transparent hover:border-teal-500 cursor-pointer"
+          >
+            Sign Up
+          </button>
+        </div>
+      </nav>
 
-
-      <div className="absolute inset-0 z-30 flex flex-col justify-center items-center text-center px-6 sm:px-16 text-white pointer-events-none">
+      <div className="absolute inset-0 z-30 flex flex-col justify-center items-center text-center px-4 sm:px-16 text-white pointer-events-none">
         {/* Headline */}
+<<<<<<< HEAD
+        <h1 className="">
+          <span className="block text-center text-3xl sm:text-4xl lg:text-6xl font-extrabold mb-3 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg">
+            INFORM.
+          </span>
+          <span className="block text-center text-3xl sm:text-4xl lg:text-6xl font-extrabold mb-3 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg">
+            ACT.
+          </span>
+          <span className="block text-center text-3xl sm:text-4xl lg:text-6xl font-extrabold mb-3 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg">
+            SUCCEED.
+          </span>
+=======
         <h1
           className="text-6xl sm:text-7xl lg:text-8xl font-extrabold mb-4 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg"
         >
           <span className="block text-center">INFORM.</span>
           <span className="block text-center">ACT.</span>
           <span className="block text-center">SUCCEED.</span>
+>>>>>>> 5c8e5e4dc481159095cb6105d57ce7eb9ff991e9
         </h1>
 
-        <p className="text-xl sm:text-2xl mb-6 opacity-90 text-center animate-fade-in delay-200 drop-shadow-md">
+        <p className="text-lg sm:text-xl mb-3 opacity-90 text-center animate-fade-in delay-200 drop-shadow-md">
           Transforming document chaos into actionable clarity.
         </p>
 
         {/* Supporting bold text */}
-        <p className="text-2xl sm:text-3xl lg:text-4xl mb-8 text-center font-extrabold leading-relaxed animate-fade-in delay-500 drop-shadow-md">
+        <p className="text-xl sm:text-xl lg:text-xl mb-6 text-center font-extrabold leading-relaxed animate-fade-in delay-500 drop-shadow-md">
           No more buried insights.
           <br />
           No more delayed decisions.

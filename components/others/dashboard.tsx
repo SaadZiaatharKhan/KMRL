@@ -343,10 +343,14 @@ const Dashboard: React.FC = () => {
         className="flex justify-between items-center p-1 w-full"
         style={{ maxWidth: 1100 }}
       >
+<<<<<<< HEAD
+        <button style={{borderRadius:"20px",padding:"10px 20px"}} className="rounded-2xl bg-green-500 text-white font-bold py-2 px-4 ">
+=======
         <button
           className="bg-green-500 text-white border-2 border-white font-bold py-0.5 px-4 rounded-2xl "
           onClick={handleShowUpload}
         >
+>>>>>>> 5c8e5e4dc481159095cb6105d57ce7eb9ff991e9
           Upload Notice
         </button>
         <input

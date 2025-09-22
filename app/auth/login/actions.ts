@@ -1,125 +1,66 @@
+// actions.ts (server)
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-
 import { createClient } from '@/utils/supabase/server'
 
-export async function login(formData: FormData) {
+export async function login(formData) {
   const supabase = await createClient()
 
-  // Extract form data
-  const email = (formData.get('email') as string)?.trim() ?? ''
-  const password = (formData.get('password') as string) ?? ''
-  const designation = (formData.get('designation') as string)?.trim() ?? ''
-  const department = (formData.get('department') as string)?.trim() ?? ''
+  const email = (formData.get('email') || '').toString().trim()
+  const password = (formData.get('password') || '').toString()
+  const designation = (formData.get('designation') || '').toString().trim()
+  const department = (formData.get('department') || '').toString().trim()
 
-  // Basic validation
   if (!email || !password || !designation) {
-    console.error('Missing required fields for login')
-    redirect('/error')
+    return { success: false, error: 'Missing required fields (email, password, designation).' }
   }
-
-  // For non-directors, department is required
   if (designation !== 'Director' && !department) {
-    console.error('Department required for non-director roles')
-    redirect('/error')
+    return { success: false, error: 'Department is required for the selected designation.' }
   }
 
   try {
-    console.log('Attempting login for:', { email, designation, department })
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) return { success: false, error: authError.message || 'Authentication failed.' }
+    if (!authData?.user?.id) return { success: false, error: 'No user returned after authentication.' }
 
-    // First authenticate the user
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (authError) {
-      console.error('Authentication failed:', authError)
-      redirect('/error')
-    }
-
-    if (!authData.user?.id) {
-      console.error('No user ID returned after authentication')
-      redirect('/error')
-    }
-
-    console.log('Authentication successful, checking profile...')
-
-    // Get the user's profile from database
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', authData.user.id)
       .single()
 
-    if (profileError || !profile) {
-      console.error('Profile not found:', profileError)
-      redirect('/error')
-    }
+    if (profileError || !profile) return { success: false, error: 'Profile not found for this user.' }
 
-    console.log('Profile found:', {
-      designation: profile.designation,
-      department: profile.department,
-      is_director: profile.is_director,
-      is_branch_manager: profile.is_branch_manager,
-      is_others: profile.is_others
-    })
-
-    // Validate designation matches
-    if (designation === 'Director') {
-      if (!profile.is_director) {
-        console.error('User is not a director but tried to login as director')
-        redirect('/error')
-      }
-      console.log('Director login successful, redirecting...')
-      revalidatePath('/', 'layout')
-      redirect('/user/director')
-    } 
-    else if (designation === 'Department Manager') {
+    // Example validation - return error messages instead of redirect
+    if (designation === 'Department Manager') {
       if (!profile.is_branch_manager) {
-        console.error('User is not a branch manager but tried to login as branch manager')
-        redirect('/error')
+        return { success: false, error: 'You do not have Branch Manager access.' }
       }
-      
-      // Check if department matches
       if (profile.department !== department) {
-        console.error('Department mismatch:', { provided: department, actual: profile.department })
-        redirect('/error')
+        return { success: false, error: 'Department does not match our records.' }
       }
-      
-      console.log('Branch Manager login successful, redirecting...')
-      revalidatePath('/', 'layout')
-      redirect('/user/branch-manager')
-    } 
-    else if (designation === 'Others') {
-      if (!profile.is_others) {
-        console.error('User is not in Others category but tried to login as Others')
-        redirect('/error')
-      }
-      
-      // Check if department matches
-      if (profile.department !== department) {
-        console.error('Department mismatch:', { provided: department, actual: profile.department })
-        redirect('/error')
-      }
-      
-      console.log('Others login successful, redirecting...')
-      revalidatePath('/', 'layout')
-      redirect('/user/others')
-    } 
-    else {
-      console.error('Invalid designation provided')
-      redirect('/error')
+      try { revalidatePath('/') } catch(e) {}
+      return { success: true, redirectTo: '/user/branch-manager' }
     }
 
-  } catch (err) {
-    // Don't log NEXT_REDIRECT errors as they are expected
-    if (err instanceof Error && err.message === 'NEXT_REDIRECT') {
-      throw err // Re-throw redirect errors
+    // Director / Others similar...
+    if (designation === 'Director') {
+      if (!profile.is_director) return { success: false, error: 'You do not have Director access.' }
+      try { revalidatePath('/') } catch(e) {}
+      return { success: true, redirectTo: '/user/director' }
     }
+
+    if (designation === 'Others') {
+      if (!profile.is_others) return { success: false, error: 'You do not have Others access.' }
+      if (profile.department !== department) return { success: false, error: 'Department does not match our records.' }
+      try { revalidatePath('/') } catch(e) {}
+      return { success: true, redirectTo: '/user/others' }
+    }
+
+    return { success: false, error: 'Invalid designation provided.' }
+  } catch (err) {
     console.error('Unexpected login error:', err)
-    redirect('/error')
+    return { success: false, error: 'An unexpected server error occurred during login.' }
   }
 }

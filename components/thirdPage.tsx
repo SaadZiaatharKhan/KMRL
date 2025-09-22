@@ -113,10 +113,8 @@ const ThirdPage = () => {
                 Scan & Archive Solutions
               </p>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+  </div>
+</div>
   );
 };
 

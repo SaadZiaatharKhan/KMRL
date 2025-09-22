@@ -32,8 +32,8 @@ export async function POST(req: Request) {
     {
   "success": true,
   "extractedNotice": {
-    "title": "string",
-  "insights": "string",
+    "title": "string (should be short)",
+  "insights": "string (should be short and maximum 2 lines)",
   "deadline": "YYYY-MM-DD",
   "severity": "High | Medium | Low",
   "authorizedBy": "string",

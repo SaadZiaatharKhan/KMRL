@@ -1,10 +1,5 @@
 import Image from "next/image";
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  startTransition,
-} from "react";
+import React, { useState, useRef, useEffect, startTransition } from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 
@@ -94,6 +89,9 @@ const Dashboard: React.FC = () => {
   const [uploadedStagingResponse, setUploadedStagingResponse] =
     useState<any>(null);
 
+  // upload overlays
+  const [uploadingOverlay, setUploadingOverlay] = useState(false);
+
   const [processing, setProcessing] = useState(false); // 🔹 overlay loader state
 
   const isAllSelected = departments.length === ALL_DEPARTMENTS.length;
@@ -136,37 +134,36 @@ const Dashboard: React.FC = () => {
 
   // 🔹 Null-safe auto-fill for both images and documents
   useEffect(() => {
-  if (uploadedStagingResponse) {
-    console.log("🔹 RECEIVED STAGING RESPONSE:", uploadedStagingResponse);
+    if (uploadedStagingResponse) {
+      console.log("🔹 RECEIVED STAGING RESPONSE:", uploadedStagingResponse);
 
-    const ex =
-      uploadedStagingResponse?.extractedNotice?.extractedNotice ??
-      uploadedStagingResponse?.extractedNotice;
+      const ex =
+        uploadedStagingResponse?.extractedNotice?.extractedNotice ??
+        uploadedStagingResponse?.extractedNotice;
 
-    if (ex) {
-      setTitle(ex.title ?? "");
-      setInsights(ex.insights ?? "");
-      setDeadline(ex.deadline ?? "");
-      setSeverity(ex.severity ?? "Low");
-      setAuthorizedBy(ex.authorizedBy ?? "");
+      if (ex) {
+        setTitle(ex.title ?? "");
+        setInsights(ex.insights ?? "");
+        setDeadline(ex.deadline ?? "");
+        setSeverity(ex.severity ?? "Low");
+        setAuthorizedBy(ex.authorizedBy ?? "");
 
-      const depts = Array.isArray(ex.departments)
-        ? ex.departments
-        : typeof ex.departments === "string"
-        ? ex.departments.split(",").map((d) => d.trim())
-        : [];
-      setDepartments(depts);
+        const depts = Array.isArray(ex.departments)
+          ? ex.departments
+          : typeof ex.departments === "string"
+          ? ex.departments.split(",").map((d) => d.trim())
+          : [];
+        setDepartments(depts);
+      }
+
+      setTimeout(() => {
+        startTransition(() => {
+          setShowUploadModal(true);
+          setProcessing(false);
+        });
+      }, 100);
     }
-
-    setTimeout(() => {
-      startTransition(() => {
-        setShowUploadModal(true);
-        setProcessing(false);
-      });
-    }, 100);
-  }
-}, [uploadedStagingResponse]);
-
+  }, [uploadedStagingResponse]);
 
   async function uploadFileToStaging(file: File, endpoint: string) {
     return new Promise<any>((resolve, reject) => {
@@ -245,8 +242,7 @@ const Dashboard: React.FC = () => {
         const form = new FormData();
         form.append("file", file);
 
-        const geminiEndpoint =
-        stagingEndpoint.includes("image")
+        const geminiEndpoint = stagingEndpoint.includes("image")
           ? "/api/summarization/image/summarization"
           : stagingEndpoint.includes("document")
           ? "/api/summarization/document/summarization"
@@ -295,35 +291,69 @@ const Dashboard: React.FC = () => {
     );
   };
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const now = new Date();
-    const uploadTime = now.toLocaleString();
-    const newNotice: Notice = {
-      id: String(Math.floor(Math.random() * 1000000)),
-      title: title || "Untitled Notice",
-      insights: insights || "",
-      deadline: deadline ?? "", // 🔹 keep empty string if null
-      severity,
-      uploadTime,
-      fileName,
-      departments: [...departments],
-      authorizedBy: authorizedBy || null,
-    };
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    setNotices((prev) => [newNotice, ...prev]);
+  setUploadingOverlay(true);
+  setUploadError(null);
+
+  try {
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("actionable_insights", insights);
+    formData.append("severity", severity);
+    formData.append("authorized_by", authorizedBy);
+    formData.append("deadline", deadline ?? "");
+    formData.append("departments", JSON.stringify(departments));
+
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append("file", fileInputRef.current.files[0]);
+    }
+
+    const resp = await fetch("/api/others/upload-notice", {
+      method: "POST",
+      body: formData, // send FormData
+    });
+
+    const json = await resp.json();
+
+    if (!resp.ok) {
+      setUploadError(json?.error || "Upload failed");
+      return;
+    }
+
+    // Optionally, you can update the Dashboard state with a new notice
+    setNotices((prev) => [
+      {
+        id: String(Math.floor(Math.random() * 1000000)),
+        title,
+        insights,
+        deadline,
+        severity,
+        uploadTime: new Date().toLocaleString(),
+        fileName: fileInputRef.current?.files?.[0]?.name ?? null,
+        departments,
+        authorizedBy,
+      },
+      ...prev,
+    ]);
+  } catch (err: any) {
+    console.error(err);
+    setUploadError(err?.message || "Upload failed");
+  } finally {
+    setUploadingOverlay(false);
     setTitle("");
     setInsights("");
     setDeadline("");
     setSeverity("Low");
-    setFileName(null);
-    setDepartments([]);
     setAuthorizedBy("");
-    setUploadProgress(null);
-    setUploading(false);
-    setUploadError(null);
+    setDepartments([]);
+    setFileName(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setShowUploadModal(false);
-  };
+  }
+};
+
 
   return (
     <div className="flex flex-col justify-center items-center w-full p-1">
@@ -604,6 +634,15 @@ const Dashboard: React.FC = () => {
               Upload
             </Button>
           </Modal.Footer>
+          {/* 🔹 Uploading Overlay */}
+          {uploadingOverlay && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+              <div className="bg-white p-4 rounded-lg flex flex-col items-center">
+                <div className="loader border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin mb-3"></div>
+                <p className="text-lg font-semibold">Uploading...</p>
+              </div>
+            </div>
+          )}
         </form>
       </Modal>
     </div>

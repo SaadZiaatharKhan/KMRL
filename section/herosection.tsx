@@ -195,7 +195,6 @@ const HeroSection: React.FC = () => {
       </nav>
 
       <div className="absolute inset-0 z-30 flex flex-col justify-center items-center text-center px-4 sm:px-16 text-white pointer-events-none">
-        {/* Headline */}
         <h1 className="">
           <span className="block text-center text-3xl sm:text-4xl lg:text-6xl font-extrabold mb-3 text-[#00B2FF] tracking-tight md:tracking-wider animate-fade-in-up drop-shadow-lg">
             INFORM.

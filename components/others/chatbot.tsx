@@ -121,7 +121,7 @@ const Chatbot: React.FC = () => {
           {/* Chat header */}
           <div className="px-4 py-3 border-b flex items-center gap-3">
             <div className="w-10 h-10 relative rounded-full overflow-hidden bg-gray-100">
-              <Image src="/images/avatars/default.jpg" alt="assistant" fill style={{ objectFit: "cover" }} />
+              <Image src="/images/chatbot.jpg" alt="assistant" fill style={{ objectFit: "cover" }} />
             </div>
             <div>
               <div className="font-semibold">Hub Assistant</div>
